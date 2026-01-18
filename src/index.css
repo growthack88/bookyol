@@ -96,9 +96,16 @@ All colors MUST be HSL.
     @apply border-border;
   }
 
+  html {
+    scroll-behavior: smooth;
+  }
+
   body {
     @apply bg-background text-foreground;
-    font-family: 'Poppins', sans-serif;
-    overflow: hidden;
+    font-family: 'Rubik', system-ui, sans-serif;
+  }
+
+  ::selection {
+    @apply bg-primary/20 text-foreground;
   }
 }
