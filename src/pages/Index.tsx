@@ -2,16 +2,48 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import FloatingIcons from "@/components/FloatingIcons";
+import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/bookyol-logo.png";
+import { z } from "zod";
+
+const emailSchema = z.string().trim().email({ message: "Please enter a valid email" }).max(255);
 
 const Index = () => {
   const [email, setEmail] = useState("");
-  const [submitted, setSubmitted] = useState(false);
+  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const [errorMessage, setErrorMessage] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (email) {
-      setSubmitted(true);
+    setErrorMessage("");
+    
+    // Validate email
+    const result = emailSchema.safeParse(email);
+    if (!result.success) {
+      setErrorMessage(result.error.errors[0].message);
+      return;
+    }
+
+    setStatus("loading");
+    
+    try {
+      const { error } = await supabase
+        .from("newsletter_signups")
+        .insert({ email: result.data });
+
+      if (error) {
+        if (error.code === "23505") {
+          // Unique constraint violation - email already exists
+          setStatus("success");
+        } else {
+          throw error;
+        }
+      } else {
+        setStatus("success");
+      }
+    } catch {
+      setStatus("error");
+      setErrorMessage("Something went wrong. Please try again.");
     }
   };
 
@@ -26,7 +58,7 @@ const Index = () => {
           <img 
             src={logo} 
             alt="BookYol.com - Read. Discover. Escape." 
-            className="mb-8 h-auto w-64 sm:w-80 md:w-96"
+            className="mb-8 h-auto w-56 sm:w-72 md:w-80"
           />
           
           {/* Headline */}
@@ -35,37 +67,44 @@ const Index = () => {
           </h1>
           
           {/* Subtext */}
-          <p className="mb-8 max-w-md text-base text-muted-foreground sm:text-lg">
-            Something special for readers is on the way.
+          <p className="mb-8 max-w-md text-base font-light text-muted-foreground sm:text-lg">
+            A new home for readers is on the way.
           </p>
           
-          {/* Email capture */}
-          {!submitted ? (
+          {/* Newsletter form */}
+          {status === "success" ? (
+            <div className="rounded-lg border border-primary/20 bg-primary/5 px-6 py-3">
+              <p className="text-sm font-medium text-primary">
+                You're on the list.
+              </p>
+            </div>
+          ) : (
             <form 
               onSubmit={handleSubmit}
               className="flex w-full max-w-sm flex-col gap-3 sm:flex-row"
             >
-              <Input
-                type="email"
-                placeholder="Enter your email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="h-11 flex-1 border-border bg-card/80 backdrop-blur-sm"
-              />
+              <div className="flex-1">
+                <Input
+                  type="email"
+                  placeholder="Enter your email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  disabled={status === "loading"}
+                  className="h-11 w-full border-border bg-card/80 font-light backdrop-blur-sm"
+                />
+                {errorMessage && (
+                  <p className="mt-1 text-xs text-destructive">{errorMessage}</p>
+                )}
+              </div>
               <Button 
                 type="submit"
+                disabled={status === "loading"}
                 className="h-11 px-6 font-medium"
               >
-                Notify Me
+                {status === "loading" ? "..." : "Notify Me"}
               </Button>
             </form>
-          ) : (
-            <div className="rounded-lg border border-primary/20 bg-primary/5 px-6 py-3">
-              <p className="text-sm font-medium text-primary">
-                Thank you! We'll keep you posted.
-              </p>
-            </div>
           )}
         </div>
       </div>
