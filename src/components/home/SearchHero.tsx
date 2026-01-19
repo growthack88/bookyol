@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { Search, X } from 'lucide-react';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { books, authors, categories, trendingSearches, searchPlaceholders } from '@/data/mockData';
+import bookyolLogo from '@/assets/bookyol-logo-full.png';
 
 const scopeOptions = [
   { id: 'books', label: 'كتب', icon: '📚' },
@@ -79,11 +80,13 @@ const SearchHero = () => {
     <section className="relative py-12 md:py-20">
       <div className="container mx-auto px-4 text-center">
         {/* Logo */}
-        <h1 className="mb-4 text-4xl font-bold tracking-tight text-foreground md:text-5xl lg:text-6xl">
-          <span className="bg-gradient-to-l from-primary to-primary/70 bg-clip-text text-transparent">
-            BookYol
-          </span>
-        </h1>
+        <div className="mb-6 flex justify-center">
+          <img
+            src={bookyolLogo}
+            alt="BookYol.com - Read. Discover. Escape."
+            className="h-24 w-auto object-contain transition-all duration-500 ease-out hover:scale-105 hover:drop-shadow-[0_8px_24px_rgba(59,130,246,0.35)] md:h-32 lg:h-40 cursor-pointer"
+          />
+        </div>
         
         {/* Tagline */}
         <p className="mb-8 text-lg text-muted-foreground md:text-xl">
