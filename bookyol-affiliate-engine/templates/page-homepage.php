@@ -27,11 +27,12 @@ if ( ! empty( $s['collections_json'] ) ) {
     $collections = bookyol_default_collections();
 }
 
-$hero_books     = bookyol_get_homepage_books( $s['hero_shelf_source'], $s['hero_shelf_book_ids'], $s['hero_shelf_count'] );
+$hero_books     = bookyol_get_homepage_books( $s['hero_shelf_source'], $s['hero_shelf_book_ids'], max( 20, (int) $s['hero_shelf_count'] ) );
 $trending_books = bookyol_get_homepage_books( $s['trending_source'], $s['trending_book_ids'], $s['trending_count'] );
 $new_books      = bookyol_get_homepage_books( $s['new_source'], $s['new_book_ids'], $s['new_count'] );
 $audio_books    = bookyol_get_homepage_books( ! empty( $s['audio_book_ids'] ) ? 'featured' : 'latest', $s['audio_book_ids'], 3 );
 
+// Build hero title with highlighted word wrapped in <em>.
 $hero_title_html = esc_html( $s['hero_title'] );
 if ( ! empty( $s['hero_title_highlight'] ) ) {
     $highlight_esc = esc_html( $s['hero_title_highlight'] );
@@ -44,6 +45,7 @@ if ( ! empty( $s['hero_title_highlight'] ) ) {
 ?>
 <div class="bookyol-home">
 
+    <!-- ══════ HERO ══════ -->
     <section class="bookyol-hero">
         <div class="bookyol-container">
             <h1 class="bookyol-hero__title"><?php echo $hero_title_html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></h1>
@@ -57,20 +59,39 @@ if ( ! empty( $s['hero_title_highlight'] ) ) {
         </div>
 
         <?php if ( ! empty( $hero_books ) ) : ?>
-            <div class="bookyol-shelf">
-                <?php foreach ( $hero_books as $book ) :
-                    $cover  = bookyol_book_cover_url( $book->ID );
-                    if ( ! $cover ) continue;
-                    $author = get_post_meta( $book->ID, '_bookyol_book_author', true );
-                    ?>
-                    <a class="bookyol-shelf__item" href="<?php echo esc_url( get_permalink( $book->ID ) ); ?>">
-                        <img src="<?php echo esc_url( $cover ); ?>" alt="<?php echo esc_attr( get_the_title( $book->ID ) ); ?>" loading="lazy">
-                    </a>
-                <?php endforeach; ?>
+            <div class="bookyol-shelf-wrapper">
+                <div class="bookyol-shelf" aria-label="<?php esc_attr_e( 'Featured books', 'bookyol' ); ?>">
+                    <div class="bookyol-shelf__track">
+                        <?php foreach ( $hero_books as $book ) :
+                            $cover = bookyol_book_cover_url( $book->ID );
+                            if ( ! $cover ) continue;
+                            $author = get_post_meta( $book->ID, '_bookyol_book_author', true );
+                            ?>
+                            <a href="<?php echo esc_url( get_permalink( $book->ID ) ); ?>" class="bookyol-shelf__item">
+                                <img src="<?php echo esc_url( $cover ); ?>" alt="<?php echo esc_attr( get_the_title( $book->ID ) ); ?>" loading="lazy" width="130" height="195">
+                                <span class="bookyol-shelf__title"><?php echo esc_html( get_the_title( $book->ID ) ); ?></span>
+                                <span class="bookyol-shelf__author"><?php echo esc_html( $author ); ?></span>
+                            </a>
+                        <?php endforeach; ?>
+                        <?php // Duplicate for seamless infinite scroll. ?>
+                        <?php foreach ( $hero_books as $book ) :
+                            $cover = bookyol_book_cover_url( $book->ID );
+                            if ( ! $cover ) continue;
+                            $author = get_post_meta( $book->ID, '_bookyol_book_author', true );
+                            ?>
+                            <a href="<?php echo esc_url( get_permalink( $book->ID ) ); ?>" class="bookyol-shelf__item" aria-hidden="true">
+                                <img src="<?php echo esc_url( $cover ); ?>" alt="<?php echo esc_attr( get_the_title( $book->ID ) ); ?>" loading="lazy" width="130" height="195">
+                                <span class="bookyol-shelf__title"><?php echo esc_html( get_the_title( $book->ID ) ); ?></span>
+                                <span class="bookyol-shelf__author"><?php echo esc_html( $author ); ?></span>
+                            </a>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
             </div>
         <?php endif; ?>
     </section>
 
+    <!-- ══════ FORMATS ══════ -->
     <section class="bookyol-section">
         <div class="bookyol-container">
             <div class="bookyol-formats">
@@ -106,6 +127,7 @@ if ( ! empty( $s['hero_title_highlight'] ) ) {
         </div>
     </section>
 
+    <!-- ══════ TRENDING ══════ -->
     <?php if ( ! empty( $trending_books ) ) : ?>
         <section class="bookyol-section bookyol-section--gray">
             <div class="bookyol-container">
@@ -150,6 +172,7 @@ if ( ! empty( $s['hero_title_highlight'] ) ) {
         </section>
     <?php endif; ?>
 
+    <!-- ══════ CATEGORIES ══════ -->
     <?php if ( ! empty( $categories ) ) : ?>
         <section class="bookyol-section">
             <div class="bookyol-container">
@@ -162,8 +185,13 @@ if ( ! empty( $s['hero_title_highlight'] ) ) {
                     <?php foreach ( $categories as $cat ) :
                         if ( empty( $cat['name'] ) ) continue;
                         $class = isset( $cat['color_class'] ) && $cat['color_class'] ? $cat['color_class'] : 'biz';
-                        $url   = isset( $cat['url'] ) ? $cat['url'] : '#';
                         $icon  = isset( $cat['icon'] ) ? $cat['icon'] : '';
+                        $url   = isset( $cat['url'] ) ? $cat['url'] : '#';
+                        // Prefer live taxonomy term link when a matching term exists.
+                        $term = get_term_by( 'name', $cat['name'], 'book_category' );
+                        if ( $term && ! is_wp_error( $term ) ) {
+                            $url = get_term_link( $term );
+                        }
                         ?>
                         <a class="bookyol-cat-pill bookyol-cat-pill--<?php echo esc_attr( $class ); ?>" href="<?php echo esc_url( $url ); ?>">
                             <?php if ( $icon ) : ?>
@@ -177,6 +205,7 @@ if ( ! empty( $s['hero_title_highlight'] ) ) {
         </section>
     <?php endif; ?>
 
+    <!-- ══════ AUDIOBOOK SPOTLIGHT ══════ -->
     <?php if ( ! empty( $s['audio_show'] ) ) : ?>
         <section class="bookyol-section bookyol-section--gray">
             <div class="bookyol-container">
@@ -204,6 +233,7 @@ if ( ! empty( $s['hero_title_highlight'] ) ) {
         </section>
     <?php endif; ?>
 
+    <!-- ══════ COLLECTIONS ══════ -->
     <?php if ( ! empty( $collections ) ) : ?>
         <section class="bookyol-section">
             <div class="bookyol-container">
@@ -234,6 +264,7 @@ if ( ! empty( $s['hero_title_highlight'] ) ) {
         </section>
     <?php endif; ?>
 
+    <!-- ══════ NEW THIS WEEK ══════ -->
     <?php if ( ! empty( $new_books ) ) : ?>
         <section class="bookyol-section bookyol-section--gray">
             <div class="bookyol-container">
@@ -272,6 +303,7 @@ if ( ! empty( $s['hero_title_highlight'] ) ) {
         </section>
     <?php endif; ?>
 
+    <!-- ══════ NEWSLETTER ══════ -->
     <?php if ( ! empty( $s['newsletter_show'] ) ) : ?>
         <section class="bookyol-section">
             <div class="bookyol-container">
@@ -290,6 +322,7 @@ if ( ! empty( $s['hero_title_highlight'] ) ) {
         </section>
     <?php endif; ?>
 
+    <!-- ══════ ARTICLES ══════ -->
     <?php if ( ! empty( $s['articles_show'] ) ) :
         $articles = get_posts( array(
             'post_type'      => $s['articles_source'] === 'books' ? 'bookyol_book' : 'post',
