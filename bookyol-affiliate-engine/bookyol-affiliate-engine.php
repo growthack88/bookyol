@@ -2,7 +2,7 @@
 /**
  * Plugin Name: BookYol Affiliate Engine
  * Description: Book affiliate link management with geo-routing, click tracking, and display shortcodes for BookYol.com
- * Version: 3.2.0
+ * Version: 3.3.0
  * Author: Mahmoud Omar
  * Author URI: https://mahmoudomar.com
  * Text Domain: bookyol
@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'BOOKYOL_VERSION', '3.2.0' );
+define( 'BOOKYOL_VERSION', '3.3.0' );
 define( 'BOOKYOL_PATH', plugin_dir_path( __FILE__ ) );
 define( 'BOOKYOL_URL', plugin_dir_url( __FILE__ ) );
 define( 'BOOKYOL_FILE', __FILE__ );
@@ -32,6 +32,7 @@ require_once BOOKYOL_PATH . 'includes/class-bulk-import.php';
 require_once BOOKYOL_PATH . 'includes/class-homepage-helpers.php';
 require_once BOOKYOL_PATH . 'includes/class-homepage-settings.php';
 require_once BOOKYOL_PATH . 'includes/class-book-taxonomy.php';
+require_once BOOKYOL_PATH . 'includes/class-category-mapper.php';
 
 function bookyol_init() {
     new BookYol_Book_CPT();
@@ -44,6 +45,7 @@ function bookyol_init() {
     new BookYol_Bulk_Import();
     new BookYol_Homepage_Settings();
     new BookYol_Book_Taxonomy();
+    new BookYol_Category_Mapper();
 }
 add_action( 'plugins_loaded', 'bookyol_init' );
 
@@ -135,17 +137,23 @@ add_filter( 'template_include', function ( $template ) {
     return $template;
 } );
 
-// Astra compatibility filters.
+// Astra compatibility filters — cover homepage, single book, and category archive.
 add_filter( 'astra_the_title_enabled', function ( $enabled ) {
-    return bookyol_is_homepage() ? false : $enabled;
+    if ( is_singular( 'bookyol_book' ) || is_tax( 'book_category' ) ) return false;
+    if ( bookyol_is_homepage() ) return false;
+    return $enabled;
 } );
 
 add_filter( 'astra_page_layout', function ( $layout ) {
-    return bookyol_is_homepage() ? 'no-sidebar' : $layout;
+    if ( is_singular( 'bookyol_book' ) || is_tax( 'book_category' ) ) return 'no-sidebar';
+    if ( bookyol_is_homepage() ) return 'no-sidebar';
+    return $layout;
 } );
 
 add_filter( 'astra_get_content_layout', function ( $layout ) {
-    return bookyol_is_homepage() ? 'page-builder' : $layout;
+    if ( is_singular( 'bookyol_book' ) || is_tax( 'book_category' ) ) return 'page-builder';
+    if ( bookyol_is_homepage() ) return 'page-builder';
+    return $layout;
 } );
 
 add_action( 'wp_head', function () {
@@ -202,6 +210,33 @@ add_filter( 'body_class', function ( $classes ) {
         $classes[] = 'page-template-bookyol-homepage';
     }
     return $classes;
+} );
+
+// Astra container reset for single book / category archive pages.
+add_action( 'wp_head', function () {
+    if ( ! is_singular( 'bookyol_book' ) && ! is_tax( 'book_category' ) ) {
+        return;
+    }
+    ?>
+    <style id="bookyol-single-reset">
+        .single-bookyol_book .site-content > .ast-container,
+        .tax-book_category  .site-content > .ast-container {
+            max-width: 100% !important;
+            padding: 0 !important;
+        }
+        .single-bookyol_book .entry-header,
+        .tax-book_category  .entry-header,
+        .single-bookyol_book .entry-title,
+        .single-bookyol_book .ast-single-post-order .entry-header {
+            display: none !important;
+        }
+        .single-bookyol_book .entry-content,
+        .tax-book_category  .entry-content {
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+    </style>
+    <?php
 } );
 
 function bookyol_enqueue_admin( $hook ) {
