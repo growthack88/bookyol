@@ -123,29 +123,29 @@ function bookyol_get_homepage_books( $source, $ids_string, $count = 5 ) {
 
 function bookyol_default_categories() {
     return array(
-        array( 'icon' => '💼', 'name' => 'Business',     'url' => '/best-business-books/',     'color_class' => 'biz' ),
-        array( 'icon' => '🧠', 'name' => 'Psychology',   'url' => '/best-psychology-books/',   'color_class' => 'psy' ),
-        array( 'icon' => '🌱', 'name' => 'Self-Help',    'url' => '/best-self-help-books/',    'color_class' => 'self' ),
-        array( 'icon' => '⚡', 'name' => 'Productivity', 'url' => '/best-productivity-books/', 'color_class' => 'prod' ),
-        array( 'icon' => '📈', 'name' => 'Marketing',    'url' => '/best-marketing-books/',    'color_class' => 'mkt' ),
-        array( 'icon' => '💰', 'name' => 'Finance',      'url' => '/best-finance-books/',      'color_class' => 'fin' ),
-        array( 'icon' => '🎯', 'name' => 'Leadership',   'url' => '/best-leadership-books/',   'color_class' => 'lead' ),
-        array( 'icon' => '📖', 'name' => 'Biographies',  'url' => '/best-biography-books/',    'color_class' => 'bio' ),
-        array( 'icon' => '🔬', 'name' => 'Science',      'url' => '/best-science-books/',      'color_class' => 'sci' ),
-        array( 'icon' => '💭', 'name' => 'Philosophy',   'url' => '/best-philosophy-books/',   'color_class' => 'phil' ),
-        array( 'icon' => '🏛️', 'name' => 'History',     'url' => '/best-history-books/',      'color_class' => 'his' ),
-        array( 'icon' => '🎨', 'name' => 'Creativity',   'url' => '/best-creativity-books/',   'color_class' => 'cre' ),
+        array( 'icon' => '💼', 'name' => 'Business',     'url' => '/books/category/business/',     'color_class' => 'biz' ),
+        array( 'icon' => '🧠', 'name' => 'Psychology',   'url' => '/books/category/psychology/',   'color_class' => 'psy' ),
+        array( 'icon' => '🌱', 'name' => 'Self-Help',    'url' => '/books/category/self-help/',    'color_class' => 'self' ),
+        array( 'icon' => '⚡', 'name' => 'Productivity', 'url' => '/books/category/productivity/', 'color_class' => 'prod' ),
+        array( 'icon' => '📈', 'name' => 'Marketing',    'url' => '/books/category/marketing/',    'color_class' => 'mkt' ),
+        array( 'icon' => '💰', 'name' => 'Finance',      'url' => '/books/category/finance/',      'color_class' => 'fin' ),
+        array( 'icon' => '🎯', 'name' => 'Leadership',   'url' => '/books/category/leadership/',   'color_class' => 'lead' ),
+        array( 'icon' => '📖', 'name' => 'Biographies',  'url' => '/books/category/biographies/',  'color_class' => 'bio' ),
+        array( 'icon' => '🔬', 'name' => 'Science',      'url' => '/books/category/science/',      'color_class' => 'sci' ),
+        array( 'icon' => '💭', 'name' => 'Philosophy',   'url' => '/books/category/philosophy/',   'color_class' => 'phil' ),
+        array( 'icon' => '🏛️', 'name' => 'History',     'url' => '/books/category/history/',      'color_class' => 'his' ),
+        array( 'icon' => '🎨', 'name' => 'Creativity',   'url' => '/books/category/creativity/',   'color_class' => 'cre' ),
     );
 }
 
 function bookyol_default_collections() {
     return array(
-        array( 'emoji' => '🚀', 'title' => 'Startup Essentials',     'count' => '24 books', 'url' => '#', 'gradient' => '1' ),
-        array( 'emoji' => '🧘', 'title' => 'Mindset & Growth',       'count' => '31 books', 'url' => '#', 'gradient' => '2' ),
-        array( 'emoji' => '💡', 'title' => 'Creative Thinking',      'count' => '18 books', 'url' => '#', 'gradient' => '3' ),
-        array( 'emoji' => '💸', 'title' => 'Money & Investing',      'count' => '22 books', 'url' => '#', 'gradient' => '4' ),
-        array( 'emoji' => '🧠', 'title' => 'Psychology Deep Dives',  'count' => '27 books', 'url' => '#', 'gradient' => '5' ),
-        array( 'emoji' => '📊', 'title' => 'Data-Driven Marketing',  'count' => '15 books', 'url' => '#', 'gradient' => '6' ),
+        array( 'emoji' => '🚀', 'title' => 'Startup Essentials',     'count' => '24 books', 'url' => '/books/category/business/',   'gradient' => '1' ),
+        array( 'emoji' => '🧘', 'title' => 'Mindset & Growth',       'count' => '31 books', 'url' => '/books/category/self-help/',  'gradient' => '2' ),
+        array( 'emoji' => '💡', 'title' => 'Creative Thinking',      'count' => '18 books', 'url' => '/books/category/creativity/', 'gradient' => '3' ),
+        array( 'emoji' => '💸', 'title' => 'Money & Investing',      'count' => '22 books', 'url' => '/books/category/finance/',    'gradient' => '4' ),
+        array( 'emoji' => '🧠', 'title' => 'Psychology Deep Dives',  'count' => '27 books', 'url' => '/books/category/psychology/', 'gradient' => '5' ),
+        array( 'emoji' => '📊', 'title' => 'Data-Driven Marketing',  'count' => '15 books', 'url' => '/books/category/marketing/',  'gradient' => '6' ),
     );
 }
 
