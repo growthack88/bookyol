@@ -2,7 +2,7 @@
 /**
  * Plugin Name: BookYol Affiliate Engine
  * Description: Book affiliate link management with geo-routing, click tracking, and display shortcodes for BookYol.com
- * Version: 3.1.0
+ * Version: 3.2.0
  * Author: Mahmoud Omar
  * Author URI: https://mahmoudomar.com
  * Text Domain: bookyol
@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'BOOKYOL_VERSION', '3.1.0' );
+define( 'BOOKYOL_VERSION', '3.2.0' );
 define( 'BOOKYOL_PATH', plugin_dir_path( __FILE__ ) );
 define( 'BOOKYOL_URL', plugin_dir_url( __FILE__ ) );
 define( 'BOOKYOL_FILE', __FILE__ );
@@ -31,6 +31,7 @@ require_once BOOKYOL_PATH . 'includes/class-settings.php';
 require_once BOOKYOL_PATH . 'includes/class-bulk-import.php';
 require_once BOOKYOL_PATH . 'includes/class-homepage-helpers.php';
 require_once BOOKYOL_PATH . 'includes/class-homepage-settings.php';
+require_once BOOKYOL_PATH . 'includes/class-book-taxonomy.php';
 
 function bookyol_init() {
     new BookYol_Book_CPT();
@@ -42,6 +43,7 @@ function bookyol_init() {
     new BookYol_Settings();
     new BookYol_Bulk_Import();
     new BookYol_Homepage_Settings();
+    new BookYol_Book_Taxonomy();
 }
 add_action( 'plugins_loaded', 'bookyol_init' );
 
@@ -67,8 +69,42 @@ function bookyol_enqueue_frontend() {
             BOOKYOL_VERSION
         );
     }
+
+    // Load fonts on single book pages and category archives for the rich templates.
+    if ( is_singular( 'bookyol_book' ) || is_tax( 'book_category' ) ) {
+        wp_enqueue_style(
+            'bookyol-google-fonts',
+            'https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@400;500;600;700&display=swap',
+            array(),
+            null
+        );
+    }
 }
 add_action( 'wp_enqueue_scripts', 'bookyol_enqueue_frontend' );
+
+// Admin bar link to Homepage Settings.
+add_action( 'admin_bar_menu', function ( $wp_admin_bar ) {
+    if ( ! current_user_can( 'manage_options' ) ) {
+        return;
+    }
+    $wp_admin_bar->add_node( array(
+        'id'    => 'bookyol-homepage-settings',
+        'title' => '📚 Edit Homepage',
+        'href'  => admin_url( 'edit.php?post_type=bookyol_book&page=bookyol-homepage-settings' ),
+        'meta'  => array( 'title' => 'BookYol Homepage Settings' ),
+    ) );
+}, 100 );
+
+// Floating "Edit Homepage" button for admins on the homepage front-end.
+add_action( 'wp_footer', function () {
+    if ( ! bookyol_is_homepage() || ! current_user_can( 'manage_options' ) ) {
+        return;
+    }
+    $url = admin_url( 'edit.php?post_type=bookyol_book&page=bookyol-homepage-settings' );
+    ?>
+    <a href="<?php echo esc_url( $url ); ?>" style="position:fixed;bottom:20px;right:20px;z-index:9999;background:#7C5CFC;color:#fff;padding:12px 20px;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;box-shadow:0 4px 20px rgba(124,92,252,0.4);text-decoration:none;">⚙️ Edit Homepage Sections</a>
+    <?php
+} );
 
 /* ==========================================================================
    Homepage Template Integration (Astra-compatible)
@@ -85,10 +121,16 @@ add_filter( 'theme_page_templates', function ( $templates ) {
 
 add_filter( 'template_include', function ( $template ) {
     if ( is_page() && get_page_template_slug() === 'bookyol-homepage' ) {
-        $plugin_template = BOOKYOL_PATH . 'templates/page-homepage.php';
-        if ( file_exists( $plugin_template ) ) {
-            return $plugin_template;
-        }
+        $t = BOOKYOL_PATH . 'templates/page-homepage.php';
+        if ( file_exists( $t ) ) return $t;
+    }
+    if ( is_tax( 'book_category' ) ) {
+        $t = BOOKYOL_PATH . 'templates/archive-book-category.php';
+        if ( file_exists( $t ) ) return $t;
+    }
+    if ( is_singular( 'bookyol_book' ) ) {
+        $t = BOOKYOL_PATH . 'templates/single-book.php';
+        if ( file_exists( $t ) ) return $t;
     }
     return $template;
 } );
@@ -214,12 +256,17 @@ function bookyol_activate() {
     require_once BOOKYOL_PATH . 'includes/class-book-cpt.php';
     require_once BOOKYOL_PATH . 'includes/class-click-tracker.php';
     require_once BOOKYOL_PATH . 'includes/class-redirect-handler.php';
+    require_once BOOKYOL_PATH . 'includes/class-book-taxonomy.php';
 
     $cpt = new BookYol_Book_CPT();
     $cpt->register();
 
+    $tax = new BookYol_Book_Taxonomy();
+    $tax->register();
+
     BookYol_Click_Tracker::create_table();
     BookYol_Redirect_Handler::add_rewrite_rules();
+    BookYol_Book_Taxonomy::create_default_terms();
 
     flush_rewrite_rules();
 }
