@@ -1,0 +1,71 @@
+/* BookYol Homepage Admin Settings */
+
+.bookyol-homepage-admin .nav-tab-wrapper {
+    margin-top: 16px;
+    margin-bottom: 20px;
+}
+
+.bookyol-homepage-admin .bookyol-tab-pane {
+    background: #fff;
+    border: 1px solid #c3c4c7;
+    border-top: none;
+    padding: 20px 24px;
+    margin-top: -1px;
+}
+
+.bookyol-homepage-admin .bookyol-tab-pane h2 {
+    margin-top: 0;
+    font-size: 18px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #f0f0f1;
+}
+
+.bookyol-homepage-admin .bookyol-tab-pane h3 {
+    font-size: 14px;
+    margin-top: 20px;
+    margin-bottom: 6px;
+    color: #1d2327;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.bookyol-homepage-admin .form-table th {
+    width: 200px;
+    padding-left: 0;
+}
+
+.bookyol-homepage-admin .form-table td input[type="text"],
+.bookyol-homepage-admin .form-table td textarea {
+    max-width: 600px;
+    width: 100%;
+}
+
+.bookyol-homepage-admin .bookyol-repeater {
+    margin-top: 10px;
+    background: #fff;
+}
+
+.bookyol-homepage-admin .bookyol-repeater td {
+    padding: 8px;
+}
+
+.bookyol-homepage-admin .bookyol-repeater input[type="text"],
+.bookyol-homepage-admin .bookyol-repeater select {
+    width: 100%;
+    max-width: 100%;
+}
+
+.bookyol-homepage-admin .bookyol-repeater-remove {
+    color: #b32d2e;
+    cursor: pointer;
+    background: none;
+    border: 1px solid #b32d2e;
+    padding: 4px 10px;
+    border-radius: 3px;
+    font-size: 12px;
+}
+
+.bookyol-homepage-admin .bookyol-repeater-remove:hover {
+    background: #b32d2e;
+    color: #fff;
+}
