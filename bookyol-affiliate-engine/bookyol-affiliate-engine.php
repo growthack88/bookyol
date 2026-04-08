@@ -1,0 +1,231 @@
+<?php
+/**
+ * Plugin Name: BookYol Affiliate Engine
+ * Description: Book affiliate link management with geo-routing, click tracking, and display shortcodes for BookYol.com
+ * Version: 3.1.0
+ * Author: Mahmoud Omar
+ * Author URI: https://mahmoudomar.com
+ * Text Domain: bookyol
+ * Requires PHP: 7.4
+ * Requires at least: 6.0
+ */
+
+if ( ! defined( 'ABSPATH' ) ) {
+    exit;
+}
+
+define( 'BOOKYOL_VERSION', '3.1.0' );
+define( 'BOOKYOL_PATH', plugin_dir_path( __FILE__ ) );
+define( 'BOOKYOL_URL', plugin_dir_url( __FILE__ ) );
+define( 'BOOKYOL_FILE', __FILE__ );
+
+require_once BOOKYOL_PATH . 'includes/class-book-cpt.php';
+require_once BOOKYOL_PATH . 'includes/class-meta-boxes.php';
+require_once BOOKYOL_PATH . 'includes/class-geo-router.php';
+require_once BOOKYOL_PATH . 'includes/class-click-tracker.php';
+require_once BOOKYOL_PATH . 'includes/class-shortcodes.php';
+require_once BOOKYOL_PATH . 'includes/class-redirect-handler.php';
+require_once BOOKYOL_PATH . 'includes/class-link-generator.php';
+require_once BOOKYOL_PATH . 'includes/class-book-lookup.php';
+require_once BOOKYOL_PATH . 'includes/class-settings.php';
+require_once BOOKYOL_PATH . 'includes/class-bulk-import.php';
+require_once BOOKYOL_PATH . 'includes/class-homepage-helpers.php';
+require_once BOOKYOL_PATH . 'includes/class-homepage-settings.php';
+
+function bookyol_init() {
+    new BookYol_Book_CPT();
+    new BookYol_Meta_Boxes();
+    new BookYol_Shortcodes();
+    new BookYol_Redirect_Handler();
+    new BookYol_Click_Tracker();
+    new BookYol_Book_Lookup();
+    new BookYol_Settings();
+    new BookYol_Bulk_Import();
+    new BookYol_Homepage_Settings();
+}
+add_action( 'plugins_loaded', 'bookyol_init' );
+
+function bookyol_enqueue_frontend() {
+    wp_enqueue_style(
+        'bookyol-display',
+        BOOKYOL_URL . 'assets/css/bookyol-display.css',
+        array(),
+        BOOKYOL_VERSION
+    );
+
+    if ( bookyol_is_homepage() ) {
+        wp_enqueue_style(
+            'bookyol-google-fonts',
+            'https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@400;500;600;700&display=swap',
+            array(),
+            null
+        );
+        wp_enqueue_style(
+            'bookyol-homepage',
+            BOOKYOL_URL . 'assets/css/bookyol-homepage.css',
+            array( 'bookyol-google-fonts' ),
+            BOOKYOL_VERSION
+        );
+    }
+}
+add_action( 'wp_enqueue_scripts', 'bookyol_enqueue_frontend' );
+
+/* ==========================================================================
+   Homepage Template Integration (Astra-compatible)
+   ========================================================================== */
+
+function bookyol_is_homepage() {
+    return is_page() && get_page_template_slug() === 'bookyol-homepage';
+}
+
+add_filter( 'theme_page_templates', function ( $templates ) {
+    $templates['bookyol-homepage'] = __( 'BookYol Homepage', 'bookyol' );
+    return $templates;
+} );
+
+add_filter( 'template_include', function ( $template ) {
+    if ( is_page() && get_page_template_slug() === 'bookyol-homepage' ) {
+        $plugin_template = BOOKYOL_PATH . 'templates/page-homepage.php';
+        if ( file_exists( $plugin_template ) ) {
+            return $plugin_template;
+        }
+    }
+    return $template;
+} );
+
+// Astra compatibility filters.
+add_filter( 'astra_the_title_enabled', function ( $enabled ) {
+    return bookyol_is_homepage() ? false : $enabled;
+} );
+
+add_filter( 'astra_page_layout', function ( $layout ) {
+    return bookyol_is_homepage() ? 'no-sidebar' : $layout;
+} );
+
+add_filter( 'astra_get_content_layout', function ( $layout ) {
+    return bookyol_is_homepage() ? 'page-builder' : $layout;
+} );
+
+add_action( 'wp_head', function () {
+    if ( ! bookyol_is_homepage() ) {
+        return;
+    }
+    ?>
+    <style id="bookyol-astra-reset">
+        body.page-template-bookyol-homepage .site-content,
+        body.page-template-bookyol-homepage .site-content > .ast-container,
+        body.page-template-bookyol-homepage .ast-container,
+        body.page-template-bookyol-homepage #primary,
+        body.page-template-bookyol-homepage #primary > article,
+        body.page-template-bookyol-homepage .entry-content,
+        body.page-template-bookyol-homepage .post-inner,
+        body.page-template-bookyol-homepage .ast-article-single {
+            max-width: 100% !important;
+            width: 100% !important;
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+        }
+        body.page-template-bookyol-homepage .entry-header,
+        body.page-template-bookyol-homepage .ast-single-post .entry-header,
+        body.page-template-bookyol-homepage .page-title,
+        body.page-template-bookyol-homepage .entry-title {
+            display: none !important;
+        }
+        body.page-template-bookyol-homepage .entry-content > .bookyol-home {
+            width: 100vw !important;
+            position: relative !important;
+            left: 50% !important;
+            right: 50% !important;
+            margin-left: -50vw !important;
+            margin-right: -50vw !important;
+            max-width: 100vw !important;
+        }
+        body.page-template-bookyol-homepage .site-content .ast-container {
+            padding: 0 !important;
+        }
+        body.page-template-bookyol-homepage .bookyol-home h1,
+        body.page-template-bookyol-homepage .bookyol-home h2,
+        body.page-template-bookyol-homepage .bookyol-home h3,
+        body.page-template-bookyol-homepage .bookyol-home p {
+            margin-top: 0 !important;
+        }
+    </style>
+    <?php
+} );
+
+add_filter( 'body_class', function ( $classes ) {
+    if ( bookyol_is_homepage() ) {
+        $classes[] = 'page-template-bookyol-homepage';
+    }
+    return $classes;
+} );
+
+function bookyol_enqueue_admin( $hook ) {
+    global $post_type;
+    if ( ( $hook === 'post.php' || $hook === 'post-new.php' ) && $post_type === 'bookyol_book' ) {
+        wp_enqueue_style(
+            'bookyol-admin',
+            BOOKYOL_URL . 'assets/css/bookyol-admin.css',
+            array(),
+            BOOKYOL_VERSION
+        );
+        wp_enqueue_media();
+        wp_enqueue_script(
+            'bookyol-admin-js',
+            BOOKYOL_URL . 'assets/js/bookyol-geo.js',
+            array(),
+            BOOKYOL_VERSION,
+            true
+        );
+        wp_enqueue_script(
+            'bookyol-lookup',
+            BOOKYOL_URL . 'assets/js/bookyol-lookup.js',
+            array(),
+            BOOKYOL_VERSION,
+            true
+        );
+        wp_localize_script( 'bookyol-lookup', 'BookYolLookup', array(
+            'ajaxUrl' => admin_url( 'admin-ajax.php' ),
+            'nonce'   => wp_create_nonce( BookYol_Book_Lookup::NONCE_ACTION ),
+        ) );
+    }
+
+    if ( $hook === 'bookyol_book_page_bookyol-homepage-settings' ) {
+        wp_enqueue_style(
+            'bookyol-homepage-admin',
+            BOOKYOL_URL . 'assets/css/bookyol-homepage-admin.css',
+            array(),
+            BOOKYOL_VERSION
+        );
+        wp_enqueue_script(
+            'bookyol-homepage-admin',
+            BOOKYOL_URL . 'assets/js/bookyol-homepage-admin.js',
+            array(),
+            BOOKYOL_VERSION,
+            true
+        );
+    }
+}
+add_action( 'admin_enqueue_scripts', 'bookyol_enqueue_admin' );
+
+function bookyol_activate() {
+    require_once BOOKYOL_PATH . 'includes/class-book-cpt.php';
+    require_once BOOKYOL_PATH . 'includes/class-click-tracker.php';
+    require_once BOOKYOL_PATH . 'includes/class-redirect-handler.php';
+
+    $cpt = new BookYol_Book_CPT();
+    $cpt->register();
+
+    BookYol_Click_Tracker::create_table();
+    BookYol_Redirect_Handler::add_rewrite_rules();
+
+    flush_rewrite_rules();
+}
+register_activation_hook( __FILE__, 'bookyol_activate' );
+
+function bookyol_deactivate() {
+    flush_rewrite_rules();
+}
+register_deactivation_hook( __FILE__, 'bookyol_deactivate' );
