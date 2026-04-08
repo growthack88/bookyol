@@ -1,0 +1,246 @@
+/* Meta box styles */
+.bookyol-meta-section {
+    margin-bottom: 20px;
+}
+
+.bookyol-meta-section h4 {
+    margin: 0 0 12px 0;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #ddd;
+    font-size: 14px;
+    color: #1d2327;
+}
+
+.bookyol-meta-field {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+    gap: 10px;
+}
+
+.bookyol-meta-field label {
+    width: 120px;
+    font-weight: 500;
+    font-size: 13px;
+    color: #50575e;
+    flex-shrink: 0;
+}
+
+.bookyol-meta-field input[type="text"],
+.bookyol-meta-field input[type="number"],
+.bookyol-meta-field input[type="url"] {
+    flex: 1;
+    max-width: 400px;
+}
+
+/* Affiliate links table */
+.bookyol-links-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.bookyol-links-table th {
+    text-align: left;
+    padding: 8px;
+    font-size: 13px;
+    border-bottom: 1px solid #ddd;
+}
+
+.bookyol-links-table td {
+    padding: 6px 8px;
+    vertical-align: middle;
+}
+
+.bookyol-links-table input[type="url"] {
+    width: 100%;
+}
+
+.bookyol-status-dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #d1d5db;
+}
+
+.bookyol-status-dot--active {
+    background: #22c55e;
+}
+
+/* Lookup section */
+.bookyol-lookup {
+    background: #f9f9f9;
+    padding: 16px;
+    border-radius: 6px;
+    margin-bottom: 16px;
+}
+
+.bookyol-lookup h4 {
+    margin: 0 0 10px 0;
+    font-size: 14px;
+}
+
+.bookyol-lookup__row {
+    display: flex;
+    gap: 8px;
+}
+
+.bookyol-lookup__row input {
+    flex: 1;
+    padding: 6px 12px;
+    font-size: 14px;
+}
+
+/* Lookup results */
+.bookyol-lookup-result {
+    display: flex;
+    gap: 12px;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    margin-top: 8px;
+    cursor: pointer;
+    background: #fff;
+    transition: border-color 0.2s;
+}
+
+.bookyol-lookup-result:hover {
+    border-color: #2271b1;
+    background: #f0f6fc;
+}
+
+.bookyol-lookup-result img {
+    border-radius: 2px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.bookyol-lookup-result strong {
+    font-size: 14px;
+}
+
+.bookyol-lookup-result small {
+    color: #666;
+    font-size: 12px;
+}
+
+#bookyol-lookup-status {
+    margin-top: 8px;
+    font-size: 13px;
+}
+
+.bookyol-status-success {
+    color: #00a32a;
+}
+
+.bookyol-status-error {
+    color: #d63638;
+}
+
+.bookyol-status-loading {
+    color: #666;
+}
+
+/* Bulk import table */
+.bookyol-bulk-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 16px;
+}
+
+.bookyol-bulk-table th {
+    text-align: left;
+    padding: 8px;
+    border-bottom: 2px solid #ddd;
+    font-size: 13px;
+}
+
+.bookyol-bulk-table td {
+    padding: 8px;
+    border-bottom: 1px solid #eee;
+    font-size: 13px;
+    vertical-align: middle;
+}
+
+.bookyol-bulk-table img {
+    border-radius: 2px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
+.bookyol-bulk-table tr.not-found {
+    opacity: 0.5;
+}
+
+/* Settings page */
+.bookyol-settings-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}
+
+.bookyol-settings-card {
+    background: #fff;
+    border: 1px solid #dcdcde;
+    border-radius: 6px;
+    padding: 16px 18px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+}
+
+.bookyol-settings-card__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #f0f0f1;
+}
+
+.bookyol-settings-card__header h3 {
+    margin: 0;
+    font-size: 15px;
+    color: #1d2327;
+}
+
+.bookyol-settings-card label {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    color: #50575e;
+    margin-bottom: 4px;
+}
+
+.bookyol-settings-card input[type="text"],
+.bookyol-settings-card input[type="url"] {
+    width: 100%;
+    max-width: 100%;
+    margin-bottom: 8px;
+}
+
+.bookyol-settings-card .bookyol-settings-help,
+.bookyol-settings-card .bookyol-settings-format {
+    font-size: 12px;
+    color: #646970;
+    margin: 6px 0 0 0;
+    line-height: 1.5;
+}
+
+.bookyol-settings-card .bookyol-settings-format code {
+    font-size: 11px;
+    background: #f6f7f7;
+    padding: 1px 4px;
+    border-radius: 2px;
+}
+
+.bookyol-settings-status {
+    font-size: 12px;
+    color: #646970;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+}
+
+.bookyol-settings-status.is-connected {
+    color: #00a32a;
+    font-weight: 600;
+}
