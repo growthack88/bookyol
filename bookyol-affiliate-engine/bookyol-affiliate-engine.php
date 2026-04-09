@@ -2,7 +2,7 @@
 /**
  * Plugin Name: BookYol Affiliate Engine
  * Description: Book affiliate link management with geo-routing, click tracking, and display shortcodes for BookYol.com
- * Version: 3.3.0
+ * Version: 4.0.0
  * Author: Mahmoud Omar
  * Author URI: https://mahmoudomar.com
  * Text Domain: bookyol
@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'BOOKYOL_VERSION', '3.3.0' );
+define( 'BOOKYOL_VERSION', '4.0.0' );
 define( 'BOOKYOL_PATH', plugin_dir_path( __FILE__ ) );
 define( 'BOOKYOL_URL', plugin_dir_url( __FILE__ ) );
 define( 'BOOKYOL_FILE', __FILE__ );
@@ -212,28 +212,58 @@ add_filter( 'body_class', function ( $classes ) {
     return $classes;
 } );
 
-// Astra container reset for single book / category archive pages.
+// v4.0.0: Astra container reset for single book / category archive pages.
 add_action( 'wp_head', function () {
     if ( ! is_singular( 'bookyol_book' ) && ! is_tax( 'book_category' ) ) {
         return;
     }
     ?>
     <style id="bookyol-single-reset">
+        /* v4.0.0: Force full-width on single book + category archive pages. */
+        .single-bookyol_book .site-content,
         .single-bookyol_book .site-content > .ast-container,
-        .tax-book_category  .site-content > .ast-container {
+        .single-bookyol_book .ast-container,
+        .single-bookyol_book #primary,
+        .single-bookyol_book #primary > article,
+        .single-bookyol_book .ast-article-single,
+        .single-bookyol_book .post-inner,
+        .tax-book_category  .site-content,
+        .tax-book_category  .site-content > .ast-container,
+        .tax-book_category  .ast-container,
+        .tax-book_category  #primary,
+        .tax-book_category  .ast-archive-description,
+        .tax-book_category  .ast-article-single {
             max-width: 100% !important;
+            width: 100% !important;
             padding: 0 !important;
+            margin-left: 0 !important;
+            margin-right: 0 !important;
         }
         .single-bookyol_book .entry-header,
         .tax-book_category  .entry-header,
+        .tax-book_category  .ast-archive-title,
+        .tax-book_category  .ast-archive-description,
         .single-bookyol_book .entry-title,
-        .single-bookyol_book .ast-single-post-order .entry-header {
+        .single-bookyol_book .ast-single-post-order .entry-header,
+        .tax-book_category  .page-title {
             display: none !important;
         }
         .single-bookyol_book .entry-content,
         .tax-book_category  .entry-content {
             margin: 0 !important;
             padding: 0 !important;
+            max-width: 100% !important;
+        }
+        /* Break our wrappers out of any remaining container. */
+        .single-bookyol_book .entry-content > .bookyol-single,
+        .tax-book_category  .entry-content > .bookyol-archive {
+            width: 100vw;
+            position: relative;
+            left: 50%;
+            right: 50%;
+            margin-left: -50vw !important;
+            margin-right: -50vw !important;
+            max-width: 100vw !important;
         }
     </style>
     <?php
