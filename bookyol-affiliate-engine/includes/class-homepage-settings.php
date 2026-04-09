@@ -43,13 +43,14 @@ class BookYol_Homepage_Settings {
         $textareas = array(
             'format_digital_desc', 'format_audio_desc', 'format_physical_desc',
             'audio_desc', 'newsletter_subtitle', 'footer_description', 'hero_subtitle',
+            'quote_text',
         );
         $urls = array(
             'format_digital_url', 'format_audio_url', 'format_physical_url',
             'audio_btn_url', 'newsletter_form_action',
         );
-        $checkboxes = array( 'audio_show', 'newsletter_show', 'articles_show' );
-        $ints       = array( 'hero_shelf_count', 'trending_count', 'new_count', 'articles_count' );
+        $checkboxes = array( 'audio_show', 'newsletter_show', 'articles_show', 'cat_rows_show', 'top_rated_show', 'quote_show' );
+        $ints       = array( 'hero_shelf_count', 'trending_count', 'new_count', 'articles_count', 'cat_rows_count', 'cat_rows_books_per', 'top_rated_count' );
 
         $out = array();
         foreach ( $input as $key => $value ) {
@@ -87,6 +88,7 @@ class BookYol_Homepage_Settings {
             }
         }
 
+        // Ensure checkboxes default to 0 if unchecked (not present in POST).
         foreach ( $checkboxes as $cb ) {
             if ( ! isset( $out[ $cb ] ) ) {
                 $out[ $cb ] = 0;
@@ -180,7 +182,10 @@ class BookYol_Homepage_Settings {
                 <a href="#hero"       class="nav-tab nav-tab-active" data-tab="hero"><?php esc_html_e( 'Hero', 'bookyol' ); ?></a>
                 <a href="#formats"    class="nav-tab" data-tab="formats"><?php esc_html_e( 'Formats', 'bookyol' ); ?></a>
                 <a href="#trending"   class="nav-tab" data-tab="trending"><?php esc_html_e( 'Trending', 'bookyol' ); ?></a>
+                <a href="#catrows"    class="nav-tab" data-tab="catrows"><?php esc_html_e( 'Category Rows', 'bookyol' ); ?></a>
                 <a href="#categories" class="nav-tab" data-tab="categories"><?php esc_html_e( 'Categories', 'bookyol' ); ?></a>
+                <a href="#toprated"   class="nav-tab" data-tab="toprated"><?php esc_html_e( 'Highest Rated', 'bookyol' ); ?></a>
+                <a href="#quote"      class="nav-tab" data-tab="quote"><?php esc_html_e( 'Quote', 'bookyol' ); ?></a>
                 <a href="#audiobook"  class="nav-tab" data-tab="audiobook"><?php esc_html_e( 'Audiobook', 'bookyol' ); ?></a>
                 <a href="#collections" class="nav-tab" data-tab="collections"><?php esc_html_e( 'Collections', 'bookyol' ); ?></a>
                 <a href="#new"        class="nav-tab" data-tab="new"><?php esc_html_e( 'New This Week', 'bookyol' ); ?></a>
@@ -195,6 +200,7 @@ class BookYol_Homepage_Settings {
                 <?php $source_opts = array( 'latest' => 'Latest', 'featured' => 'Featured (IDs)', 'random' => 'Random' ); ?>
                 <?php $trending_opts = $source_opts; $trending_opts['most_clicked'] = 'Most Clicked'; ?>
 
+                <!-- HERO -->
                 <div class="bookyol-tab-pane" data-pane="hero">
                     <h2><?php esc_html_e( 'Hero / Top Section', 'bookyol' ); ?></h2>
                     <table class="form-table">
@@ -207,6 +213,7 @@ class BookYol_Homepage_Settings {
                     </table>
                 </div>
 
+                <!-- FORMATS -->
                 <div class="bookyol-tab-pane" data-pane="formats" style="display:none;">
                     <h2><?php esc_html_e( 'Reading Formats', 'bookyol' ); ?></h2>
                     <h3><?php esc_html_e( 'Digital Card', 'bookyol' ); ?></h3>
@@ -232,6 +239,7 @@ class BookYol_Homepage_Settings {
                     </table>
                 </div>
 
+                <!-- TRENDING -->
                 <div class="bookyol-tab-pane" data-pane="trending" style="display:none;">
                     <h2><?php esc_html_e( 'Trending Now', 'bookyol' ); ?></h2>
                     <table class="form-table">
@@ -243,6 +251,20 @@ class BookYol_Homepage_Settings {
                     </table>
                 </div>
 
+                <!-- CATEGORY ROWS (v4.2.0) -->
+                <div class="bookyol-tab-pane" data-pane="catrows" style="display:none;">
+                    <h2><?php esc_html_e( 'Category Rows', 'bookyol' ); ?></h2>
+                    <p class="description"><?php esc_html_e( 'Show dynamic book rows by category on the homepage. Each row pulls random books from one category.', 'bookyol' ); ?></p>
+                    <table class="form-table">
+                        <?php $this->field_row( 'Show Category Rows', function() use ( $s ) { $this->checkbox( 'cat_rows_show', $s['cat_rows_show'], __( 'Display category book rows on homepage', 'bookyol' ) ); } ); ?>
+                        <?php $this->field_row( 'Source', function() use ( $s ) { $this->select( 'cat_rows_source', $s['cat_rows_source'], array( 'auto' => 'Auto (most populated categories)', 'manual' => 'Manual (specify slugs below)' ) ); } ); ?>
+                        <?php $this->field_row( 'Number of Rows (Auto mode)', function() use ( $s ) { $this->number( 'cat_rows_count', $s['cat_rows_count'] ); } ); ?>
+                        <?php $this->field_row( 'Books per Row', function() use ( $s ) { $this->number( 'cat_rows_books_per', $s['cat_rows_books_per'] ); } ); ?>
+                        <?php $this->field_row( 'Manual Category Slugs', function() use ( $s ) { $this->text( 'cat_rows_slugs', $s['cat_rows_slugs'], 'fiction,business,psychology,self-help' ); } ); ?>
+                    </table>
+                </div>
+
+                <!-- CATEGORIES -->
                 <div class="bookyol-tab-pane" data-pane="categories" style="display:none;">
                     <h2><?php esc_html_e( 'Categories', 'bookyol' ); ?></h2>
                     <p class="description"><?php esc_html_e( 'Add, edit, or remove category pills. Color classes: biz, psy, self, prod, mkt, fin, lead, bio, sci, phil, his, cre', 'bookyol' ); ?></p>
@@ -262,6 +284,29 @@ class BookYol_Homepage_Settings {
                     <textarea id="bookyol_categories_json" name="<?php echo esc_attr( self::OPTION_KEY ); ?>[categories_json]" style="display:none;"><?php echo esc_textarea( $categories_json ); ?></textarea>
                 </div>
 
+                <!-- HIGHEST RATED (v4.2.0) -->
+                <div class="bookyol-tab-pane" data-pane="toprated" style="display:none;">
+                    <h2><?php esc_html_e( 'Highest Rated Books', 'bookyol' ); ?></h2>
+                    <p class="description"><?php esc_html_e( 'Shows the top-rated books across all categories, sorted by rating descending.', 'bookyol' ); ?></p>
+                    <table class="form-table">
+                        <?php $this->field_row( 'Show Section', function() use ( $s ) { $this->checkbox( 'top_rated_show', $s['top_rated_show'], __( 'Display highest-rated section', 'bookyol' ) ); } ); ?>
+                        <?php $this->field_row( 'Title',       function() use ( $s ) { $this->text( 'top_rated_title', $s['top_rated_title'] ); } ); ?>
+                        <?php $this->field_row( 'Book Count',  function() use ( $s ) { $this->number( 'top_rated_count', $s['top_rated_count'] ); } ); ?>
+                    </table>
+                </div>
+
+                <!-- QUOTE BANNER (v4.2.0) -->
+                <div class="bookyol-tab-pane" data-pane="quote" style="display:none;">
+                    <h2><?php esc_html_e( 'Quote Banner', 'bookyol' ); ?></h2>
+                    <p class="description"><?php esc_html_e( 'A visual break on the homepage with an inspirational quote about reading.', 'bookyol' ); ?></p>
+                    <table class="form-table">
+                        <?php $this->field_row( 'Show Quote',   function() use ( $s ) { $this->checkbox( 'quote_show', $s['quote_show'], __( 'Display the quote banner', 'bookyol' ) ); } ); ?>
+                        <?php $this->field_row( 'Quote Text',   function() use ( $s ) { $this->textarea( 'quote_text', $s['quote_text'] ); } ); ?>
+                        <?php $this->field_row( 'Quote Author', function() use ( $s ) { $this->text( 'quote_author', $s['quote_author'] ); } ); ?>
+                    </table>
+                </div>
+
+                <!-- AUDIOBOOK -->
                 <div class="bookyol-tab-pane" data-pane="audiobook" style="display:none;">
                     <h2><?php esc_html_e( 'Audiobook Spotlight', 'bookyol' ); ?></h2>
                     <table class="form-table">
@@ -274,6 +319,7 @@ class BookYol_Homepage_Settings {
                     </table>
                 </div>
 
+                <!-- COLLECTIONS -->
                 <div class="bookyol-tab-pane" data-pane="collections" style="display:none;">
                     <h2><?php esc_html_e( 'Collections', 'bookyol' ); ?></h2>
                     <p class="description"><?php esc_html_e( 'Gradient options: 1=purple, 2=pink, 3=cyan, 4=green, 5=sunset, 6=lavender', 'bookyol' ); ?></p>
@@ -294,6 +340,7 @@ class BookYol_Homepage_Settings {
                     <textarea id="bookyol_collections_json" name="<?php echo esc_attr( self::OPTION_KEY ); ?>[collections_json]" style="display:none;"><?php echo esc_textarea( $collections_json ); ?></textarea>
                 </div>
 
+                <!-- NEW THIS WEEK -->
                 <div class="bookyol-tab-pane" data-pane="new" style="display:none;">
                     <h2><?php esc_html_e( 'New This Week', 'bookyol' ); ?></h2>
                     <table class="form-table">
@@ -305,6 +352,7 @@ class BookYol_Homepage_Settings {
                     </table>
                 </div>
 
+                <!-- NEWSLETTER -->
                 <div class="bookyol-tab-pane" data-pane="newsletter" style="display:none;">
                     <h2><?php esc_html_e( 'Newsletter', 'bookyol' ); ?></h2>
                     <table class="form-table">
@@ -317,6 +365,7 @@ class BookYol_Homepage_Settings {
                     </table>
                 </div>
 
+                <!-- ARTICLES -->
                 <div class="bookyol-tab-pane" data-pane="articles" style="display:none;">
                     <h2><?php esc_html_e( 'Blog Articles', 'bookyol' ); ?></h2>
                     <table class="form-table">
@@ -328,6 +377,7 @@ class BookYol_Homepage_Settings {
                     </table>
                 </div>
 
+                <!-- FOOTER -->
                 <div class="bookyol-tab-pane" data-pane="footer" style="display:none;">
                     <h2><?php esc_html_e( 'Footer', 'bookyol' ); ?></h2>
                     <p class="description"><?php esc_html_e( 'These values are exposed in settings for future use. The current template uses your Astra theme footer via get_footer().', 'bookyol' ); ?></p>

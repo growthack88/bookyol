@@ -1,6 +1,7 @@
 <?php
 /**
  * Template Name: BookYol Homepage
+ * v4.2.0 — Expanded homepage with 16 sections and dynamic category rows
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -11,6 +12,7 @@ get_header();
 
 $s = bookyol_get_homepage_settings();
 
+// Categories/collections JSON.
 $categories = array();
 if ( ! empty( $s['categories_json'] ) ) {
     $decoded    = json_decode( $s['categories_json'], true );
@@ -27,25 +29,125 @@ if ( ! empty( $s['collections_json'] ) ) {
     $collections = bookyol_default_collections();
 }
 
-$hero_books     = bookyol_get_homepage_books( $s['hero_shelf_source'], $s['hero_shelf_book_ids'], max( 20, (int) $s['hero_shelf_count'] ) );
-$trending_books = bookyol_get_homepage_books( $s['trending_source'], $s['trending_book_ids'], $s['trending_count'] );
-$new_books      = bookyol_get_homepage_books( $s['new_source'], $s['new_book_ids'], $s['new_count'] );
-$audio_books    = bookyol_get_homepage_books( ! empty( $s['audio_book_ids'] ) ? 'featured' : 'latest', $s['audio_book_ids'], 3 );
+/* ------------------------------------------------------------------
+   HELPERS
+   ------------------------------------------------------------------ */
+$filter_with_cover = function ( $books ) {
+    return array_values( array_filter( $books, function ( $book ) {
+        return ! empty( get_post_meta( $book->ID, '_bookyol_cover_url', true ) );
+    } ) );
+};
 
-// Build hero title with highlighted word wrapped in <em>.
+/* ------------------------------------------------------------------
+   HERO SHELF (24 books, cover-required)
+   ------------------------------------------------------------------ */
+$hero_books = bookyol_get_homepage_books(
+    $s['hero_shelf_source'],
+    $s['hero_shelf_book_ids'],
+    max( 24, (int) $s['hero_shelf_count'] )
+);
+$hero_books = $filter_with_cover( $hero_books );
+
+/* ------------------------------------------------------------------
+   TRENDING (10)
+   ------------------------------------------------------------------ */
+$trending_count = max( 10, (int) $s['trending_count'] );
+$trending_books = bookyol_get_homepage_books( $s['trending_source'], $s['trending_book_ids'], $trending_count );
+$trending_books = $filter_with_cover( $trending_books );
+
+/* ------------------------------------------------------------------
+   NEW THIS WEEK (10)
+   ------------------------------------------------------------------ */
+$new_count  = max( 10, (int) $s['new_count'] );
+$new_books  = bookyol_get_homepage_books( $s['new_source'], $s['new_book_ids'], $new_count );
+$new_books  = $filter_with_cover( $new_books );
+
+/* ------------------------------------------------------------------
+   AUDIOBOOK SPOTLIGHT (3)
+   ------------------------------------------------------------------ */
+$audio_books = bookyol_get_homepage_books( ! empty( $s['audio_book_ids'] ) ? 'featured' : 'latest', $s['audio_book_ids'], 3 );
+$audio_books = $filter_with_cover( $audio_books );
+
+/* ------------------------------------------------------------------
+   CATEGORY ROWS (v4.2.0)
+   ------------------------------------------------------------------ */
+$cat_rows = array();
+if ( ! empty( $s['cat_rows_show'] ) && function_exists( 'bookyol_get_top_categories_with_books' ) ) {
+    $cat_rows_count     = max( 1, (int) $s['cat_rows_count'] );
+    $cat_rows_books_per = max( 3, (int) $s['cat_rows_books_per'] );
+    if ( $s['cat_rows_source'] === 'manual' && ! empty( $s['cat_rows_slugs'] ) ) {
+        $slugs    = array_filter( array_map( 'trim', explode( ',', $s['cat_rows_slugs'] ) ) );
+        $cat_rows = bookyol_get_top_categories_with_books( $cat_rows_count, $cat_rows_books_per, $slugs );
+    } else {
+        $cat_rows = bookyol_get_top_categories_with_books( $cat_rows_count, $cat_rows_books_per );
+    }
+}
+
+// Split category rows: first 2 after Trending, next 2 after Audiobook.
+$cat_rows_top    = array_slice( $cat_rows, 0, 2 );
+$cat_rows_bottom = array_slice( $cat_rows, 2 );
+
+/* ------------------------------------------------------------------
+   HIGHEST RATED (v4.2.0)
+   ------------------------------------------------------------------ */
+$top_rated_books = array();
+if ( ! empty( $s['top_rated_show'] ) ) {
+    $top_rated_books = get_posts( array(
+        'post_type'      => 'bookyol_book',
+        'posts_per_page' => max( 5, (int) $s['top_rated_count'] ),
+        'post_status'    => 'publish',
+        'meta_key'       => '_bookyol_rating',
+        'orderby'        => 'meta_value_num',
+        'order'          => 'DESC',
+    ) );
+    $top_rated_books = $filter_with_cover( $top_rated_books );
+}
+
+/* ------------------------------------------------------------------
+   Hero title with highlight
+   ------------------------------------------------------------------ */
 $hero_title_html = esc_html( $s['hero_title'] );
 if ( ! empty( $s['hero_title_highlight'] ) ) {
-    $highlight_esc = esc_html( $s['hero_title_highlight'] );
+    $highlight_esc   = esc_html( $s['hero_title_highlight'] );
     $hero_title_html = str_replace(
         $highlight_esc,
         '<em>' . $highlight_esc . '</em>',
         $hero_title_html
     );
 }
+
+/**
+ * Reusable book-card renderer for the 5-column grids.
+ */
+$render_book_card = function ( $book, $extra_badge = '', $badge_class = '' ) {
+    $cover = get_post_meta( $book->ID, '_bookyol_cover_url', true );
+    if ( empty( $cover ) ) return;
+    $author = get_post_meta( $book->ID, '_bookyol_book_author', true );
+    $rating = get_post_meta( $book->ID, '_bookyol_rating', true );
+    ?>
+    <a href="<?php echo esc_url( get_permalink( $book->ID ) ); ?>" class="bookyol-book-card">
+        <div class="bookyol-book-card__img">
+            <?php if ( $extra_badge ) : ?>
+                <span class="bookyol-book-card__badge <?php echo esc_attr( $badge_class ); ?>"><?php echo esc_html( $extra_badge ); ?></span>
+            <?php endif; ?>
+            <?php if ( $rating ) : ?>
+                <span class="bookyol-book-card__rating"><span class="star">★</span> <?php echo esc_html( $rating ); ?></span>
+            <?php endif; ?>
+            <img src="<?php echo esc_url( $cover ); ?>" alt="<?php echo esc_attr( get_the_title( $book->ID ) ); ?>" loading="lazy">
+        </div>
+        <div class="bookyol-book-card__info">
+            <h3 class="bookyol-book-card__title"><?php echo esc_html( get_the_title( $book->ID ) ); ?></h3>
+            <?php if ( $author ) : ?>
+                <p class="bookyol-book-card__author"><?php echo esc_html( $author ); ?></p>
+            <?php endif; ?>
+        </div>
+    </a>
+    <?php
+};
 ?>
 <div class="bookyol-home">
 
-    <!-- ══════ HERO ══════ -->
+    <!-- ══════ 1. HERO ══════ -->
     <section class="bookyol-hero">
         <div class="bookyol-container">
             <h1 class="bookyol-hero__title"><?php echo $hero_title_html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></h1>
@@ -63,8 +165,7 @@ if ( ! empty( $s['hero_title_highlight'] ) ) {
                 <div class="bookyol-shelf" aria-label="<?php esc_attr_e( 'Featured books', 'bookyol' ); ?>">
                     <div class="bookyol-shelf__track">
                         <?php foreach ( $hero_books as $book ) :
-                            $cover = bookyol_book_cover_url( $book->ID );
-                            if ( ! $cover ) continue;
+                            $cover  = bookyol_book_cover_url( $book->ID );
                             $author = get_post_meta( $book->ID, '_bookyol_book_author', true );
                             ?>
                             <a href="<?php echo esc_url( get_permalink( $book->ID ) ); ?>" class="bookyol-shelf__item">
@@ -75,8 +176,7 @@ if ( ! empty( $s['hero_title_highlight'] ) ) {
                         <?php endforeach; ?>
                         <?php // Duplicate for seamless infinite scroll. ?>
                         <?php foreach ( $hero_books as $book ) :
-                            $cover = bookyol_book_cover_url( $book->ID );
-                            if ( ! $cover ) continue;
+                            $cover  = bookyol_book_cover_url( $book->ID );
                             $author = get_post_meta( $book->ID, '_bookyol_book_author', true );
                             ?>
                             <a href="<?php echo esc_url( get_permalink( $book->ID ) ); ?>" class="bookyol-shelf__item" aria-hidden="true">
@@ -91,7 +191,7 @@ if ( ! empty( $s['hero_title_highlight'] ) ) {
         <?php endif; ?>
     </section>
 
-    <!-- ══════ FORMATS ══════ -->
+    <!-- ══════ 2. FORMAT CARDS ══════ -->
     <section class="bookyol-section">
         <div class="bookyol-container">
             <div class="bookyol-formats">
@@ -127,7 +227,7 @@ if ( ! empty( $s['hero_title_highlight'] ) ) {
         </div>
     </section>
 
-    <!-- ══════ TRENDING ══════ -->
+    <!-- ══════ 3. TRENDING ══════ -->
     <?php if ( ! empty( $trending_books ) ) : ?>
         <section class="bookyol-section bookyol-section--gray">
             <div class="bookyol-container">
@@ -139,40 +239,45 @@ if ( ! empty( $s['hero_title_highlight'] ) ) {
                 </div>
                 <div class="bookyol-books-grid">
                     <?php foreach ( $trending_books as $i => $book ) :
-                        $cover  = bookyol_book_cover_url( $book->ID );
-                        $author = get_post_meta( $book->ID, '_bookyol_book_author', true );
-                        $rating = get_post_meta( $book->ID, '_bookyol_rating', true );
                         $is_first = ( $i === 0 );
                         $is_new   = bookyol_is_new_book( $book->ID );
-                        ?>
-                        <a class="bookyol-book-card" href="<?php echo esc_url( get_permalink( $book->ID ) ); ?>">
-                            <div class="bookyol-book-card__img">
-                                <?php if ( $cover ) : ?>
-                                    <img src="<?php echo esc_url( $cover ); ?>" alt="<?php echo esc_attr( get_the_title( $book->ID ) ); ?>" loading="lazy">
-                                <?php endif; ?>
-                                <?php if ( $is_first ) : ?>
-                                    <span class="bookyol-book-card__badge bookyol-badge--trending"><?php esc_html_e( '🔥 Trending', 'bookyol' ); ?></span>
-                                <?php elseif ( $is_new ) : ?>
-                                    <span class="bookyol-book-card__badge bookyol-badge--new"><?php esc_html_e( 'New', 'bookyol' ); ?></span>
-                                <?php endif; ?>
-                                <?php if ( $rating ) : ?>
-                                    <span class="bookyol-book-card__rating"><span class="star">★</span> <?php echo esc_html( $rating ); ?></span>
-                                <?php endif; ?>
-                            </div>
-                            <div class="bookyol-book-card__info">
-                                <h3 class="bookyol-book-card__title"><?php echo esc_html( get_the_title( $book->ID ) ); ?></h3>
-                                <?php if ( $author ) : ?>
-                                    <p class="bookyol-book-card__author"><?php echo esc_html( $author ); ?></p>
-                                <?php endif; ?>
-                            </div>
-                        </a>
-                    <?php endforeach; ?>
+                        $badge    = $is_first ? '🔥 Trending' : ( $is_new ? 'New' : '' );
+                        $badge_cl = $is_first ? 'bookyol-badge--trending' : ( $is_new ? 'bookyol-badge--new' : '' );
+                        $render_book_card( $book, $badge, $badge_cl );
+                    endforeach; ?>
                 </div>
             </div>
         </section>
     <?php endif; ?>
 
-    <!-- ══════ CATEGORIES ══════ -->
+    <!-- ══════ 4-5. CATEGORY ROWS (top 2) ══════ -->
+    <?php foreach ( $cat_rows_top as $cat_row ) :
+        $cat_term  = $cat_row['term'];
+        $cat_emoji = $cat_row['emoji'];
+        $cat_color = $cat_row['color'];
+        $cat_books = $cat_row['books'];
+        $cat_link  = get_term_link( $cat_term );
+        if ( is_wp_error( $cat_link ) ) continue;
+        ?>
+        <section class="bookyol-section">
+            <div class="bookyol-container">
+                <div class="bookyol-section__header">
+                    <div class="bookyol-section__label">
+                        <span class="bookyol-section__dot" style="background: <?php echo esc_attr( $cat_color ); ?>;"></span>
+                        <h2 class="bookyol-section__title"><?php echo esc_html( $cat_emoji . ' ' . $cat_term->name ); ?></h2>
+                    </div>
+                    <a href="<?php echo esc_url( $cat_link ); ?>" class="bookyol-section__link" style="color: <?php echo esc_attr( $cat_color ); ?>;">
+                        <?php printf( esc_html__( 'See all %d books', 'bookyol' ), (int) $cat_term->count ); ?> →
+                    </a>
+                </div>
+                <div class="bookyol-books-grid">
+                    <?php foreach ( $cat_books as $cb ) { $render_book_card( $cb ); } ?>
+                </div>
+            </div>
+        </section>
+    <?php endforeach; ?>
+
+    <!-- ══════ 6. EXPLORE BY CATEGORY (pills) ══════ -->
     <?php if ( ! empty( $categories ) ) : ?>
         <section class="bookyol-section">
             <div class="bookyol-container">
@@ -187,8 +292,7 @@ if ( ! empty( $s['hero_title_highlight'] ) ) {
                         $class = isset( $cat['color_class'] ) && $cat['color_class'] ? $cat['color_class'] : 'biz';
                         $icon  = isset( $cat['icon'] ) ? $cat['icon'] : '';
                         $url   = isset( $cat['url'] ) ? $cat['url'] : '#';
-                        // Prefer live taxonomy term link when a matching term exists.
-                        $term = get_term_by( 'name', $cat['name'], 'book_category' );
+                        $term  = get_term_by( 'name', $cat['name'], 'book_category' );
                         if ( $term && ! is_wp_error( $term ) ) {
                             $url = get_term_link( $term );
                         }
@@ -205,7 +309,45 @@ if ( ! empty( $s['hero_title_highlight'] ) ) {
         </section>
     <?php endif; ?>
 
-    <!-- ══════ AUDIOBOOK SPOTLIGHT ══════ -->
+    <!-- ══════ 7. HIGHEST RATED ══════ -->
+    <?php if ( ! empty( $top_rated_books ) ) : ?>
+        <section class="bookyol-section bookyol-section--gray">
+            <div class="bookyol-container">
+                <div class="bookyol-section__header">
+                    <div class="bookyol-section__label">
+                        <span class="bookyol-section__dot" style="background: #F5A623;"></span>
+                        <h2 class="bookyol-section__title"><?php echo esc_html( $s['top_rated_title'] ); ?></h2>
+                    </div>
+                    <a href="<?php echo esc_url( home_url( '/books/' ) ); ?>" class="bookyol-section__link" style="color: #F5A623;"><?php esc_html_e( 'See all', 'bookyol' ); ?> →</a>
+                </div>
+                <div class="bookyol-books-grid">
+                    <?php foreach ( $top_rated_books as $idx => $book ) :
+                        $badge    = $idx === 0 ? '#1 Rated' : '';
+                        $badge_cl = $idx === 0 ? 'bookyol-badge--pick' : '';
+                        $render_book_card( $book, $badge, $badge_cl );
+                    endforeach; ?>
+                </div>
+            </div>
+        </section>
+    <?php endif; ?>
+
+    <!-- ══════ 8. QUOTE BANNER ══════ -->
+    <?php if ( ! empty( $s['quote_show'] ) && ! empty( $s['quote_text'] ) ) : ?>
+        <section class="bookyol-section" style="padding: 32px 0;">
+            <div class="bookyol-container">
+                <div class="bookyol-quote-banner">
+                    <blockquote>
+                        &ldquo;<?php echo esc_html( $s['quote_text'] ); ?>&rdquo;
+                    </blockquote>
+                    <?php if ( ! empty( $s['quote_author'] ) ) : ?>
+                        <cite>— <?php echo esc_html( $s['quote_author'] ); ?></cite>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </section>
+    <?php endif; ?>
+
+    <!-- ══════ 9. AUDIOBOOK SPOTLIGHT ══════ -->
     <?php if ( ! empty( $s['audio_show'] ) ) : ?>
         <section class="bookyol-section bookyol-section--gray">
             <div class="bookyol-container">
@@ -220,7 +362,6 @@ if ( ! empty( $s['hero_title_highlight'] ) ) {
                         <div class="bookyol-audio-banner__books">
                             <?php foreach ( array_slice( $audio_books, 0, 3 ) as $book ) :
                                 $cover = bookyol_book_cover_url( $book->ID );
-                                if ( ! $cover ) continue;
                                 ?>
                                 <a href="<?php echo esc_url( get_permalink( $book->ID ) ); ?>">
                                     <img src="<?php echo esc_url( $cover ); ?>" alt="<?php echo esc_attr( get_the_title( $book->ID ) ); ?>" loading="lazy">
@@ -233,9 +374,36 @@ if ( ! empty( $s['hero_title_highlight'] ) ) {
         </section>
     <?php endif; ?>
 
-    <!-- ══════ COLLECTIONS ══════ -->
-    <?php if ( ! empty( $collections ) ) : ?>
+    <!-- ══════ 10-11. CATEGORY ROWS (bottom 2) ══════ -->
+    <?php foreach ( $cat_rows_bottom as $cat_row ) :
+        $cat_term  = $cat_row['term'];
+        $cat_emoji = $cat_row['emoji'];
+        $cat_color = $cat_row['color'];
+        $cat_books = $cat_row['books'];
+        $cat_link  = get_term_link( $cat_term );
+        if ( is_wp_error( $cat_link ) ) continue;
+        ?>
         <section class="bookyol-section">
+            <div class="bookyol-container">
+                <div class="bookyol-section__header">
+                    <div class="bookyol-section__label">
+                        <span class="bookyol-section__dot" style="background: <?php echo esc_attr( $cat_color ); ?>;"></span>
+                        <h2 class="bookyol-section__title"><?php echo esc_html( $cat_emoji . ' ' . $cat_term->name ); ?></h2>
+                    </div>
+                    <a href="<?php echo esc_url( $cat_link ); ?>" class="bookyol-section__link" style="color: <?php echo esc_attr( $cat_color ); ?>;">
+                        <?php printf( esc_html__( 'See all %d books', 'bookyol' ), (int) $cat_term->count ); ?> →
+                    </a>
+                </div>
+                <div class="bookyol-books-grid">
+                    <?php foreach ( $cat_books as $cb ) { $render_book_card( $cb ); } ?>
+                </div>
+            </div>
+        </section>
+    <?php endforeach; ?>
+
+    <!-- ══════ 12. COLLECTIONS ══════ -->
+    <?php if ( ! empty( $collections ) ) : ?>
+        <section class="bookyol-section bookyol-section--gray">
             <div class="bookyol-container">
                 <div class="bookyol-section__header">
                     <div class="bookyol-section__label">
@@ -264,9 +432,9 @@ if ( ! empty( $s['hero_title_highlight'] ) ) {
         </section>
     <?php endif; ?>
 
-    <!-- ══════ NEW THIS WEEK ══════ -->
+    <!-- ══════ 13. NEW THIS WEEK ══════ -->
     <?php if ( ! empty( $new_books ) ) : ?>
-        <section class="bookyol-section bookyol-section--gray">
+        <section class="bookyol-section">
             <div class="bookyol-container">
                 <div class="bookyol-section__header">
                     <div class="bookyol-section__label">
@@ -275,54 +443,43 @@ if ( ! empty( $s['hero_title_highlight'] ) ) {
                     </div>
                 </div>
                 <div class="bookyol-books-grid">
-                    <?php foreach ( $new_books as $book ) :
-                        $cover  = bookyol_book_cover_url( $book->ID );
-                        $author = get_post_meta( $book->ID, '_bookyol_book_author', true );
-                        $rating = get_post_meta( $book->ID, '_bookyol_rating', true );
-                        ?>
-                        <a class="bookyol-book-card" href="<?php echo esc_url( get_permalink( $book->ID ) ); ?>">
-                            <div class="bookyol-book-card__img">
-                                <?php if ( $cover ) : ?>
-                                    <img src="<?php echo esc_url( $cover ); ?>" alt="<?php echo esc_attr( get_the_title( $book->ID ) ); ?>" loading="lazy">
-                                <?php endif; ?>
-                                <span class="bookyol-book-card__badge bookyol-badge--new" style="background: <?php echo esc_attr( $s['new_color'] ); ?>;"><?php esc_html_e( 'New', 'bookyol' ); ?></span>
-                                <?php if ( $rating ) : ?>
-                                    <span class="bookyol-book-card__rating"><span class="star">★</span> <?php echo esc_html( $rating ); ?></span>
-                                <?php endif; ?>
-                            </div>
-                            <div class="bookyol-book-card__info">
-                                <h3 class="bookyol-book-card__title"><?php echo esc_html( get_the_title( $book->ID ) ); ?></h3>
-                                <?php if ( $author ) : ?>
-                                    <p class="bookyol-book-card__author"><?php echo esc_html( $author ); ?></p>
-                                <?php endif; ?>
-                            </div>
-                        </a>
-                    <?php endforeach; ?>
+                    <?php foreach ( $new_books as $book ) {
+                        $render_book_card( $book, 'New', 'bookyol-badge--new' );
+                    } ?>
                 </div>
             </div>
         </section>
     <?php endif; ?>
 
-    <!-- ══════ NEWSLETTER ══════ -->
-    <?php if ( ! empty( $s['newsletter_show'] ) ) : ?>
-        <section class="bookyol-section">
+    <!-- ══════ 14. NEWSLETTER ══════ -->
+    <?php if ( ! empty( $s['newsletter_show'] ) ) :
+        $nl_action = isset( $s['newsletter_form_action'] ) ? $s['newsletter_form_action'] : '';
+        ?>
+        <section class="bookyol-section bookyol-section--gray">
             <div class="bookyol-container">
                 <div class="bookyol-newsletter">
                     <h2 class="bookyol-newsletter__title"><?php echo esc_html( $s['newsletter_title'] ); ?></h2>
                     <p class="bookyol-newsletter__subtitle"><?php echo esc_html( $s['newsletter_subtitle'] ); ?></p>
-                    <?php if ( ! empty( $s['newsletter_form_action'] ) ) : ?>
-                        <form class="bookyol-newsletter__form" action="<?php echo esc_url( $s['newsletter_form_action'] ); ?>" method="post">
-                            <input type="email" name="email" placeholder="<?php esc_attr_e( 'your@email.com', 'bookyol' ); ?>" required />
-                            <button type="submit"><?php echo esc_html( $s['newsletter_btn_text'] ); ?></button>
-                        </form>
-                    <?php endif; ?>
+                    <div class="bookyol-newsletter__form">
+                        <?php if ( ! empty( $nl_action ) ) : ?>
+                            <form action="<?php echo esc_url( $nl_action ); ?>" method="post">
+                                <input type="email" name="email_address" placeholder="<?php esc_attr_e( 'Enter your email address', 'bookyol' ); ?>" required />
+                                <button type="submit"><?php echo esc_html( $s['newsletter_btn_text'] ); ?></button>
+                            </form>
+                        <?php else : ?>
+                            <form onsubmit="event.preventDefault(); alert('Newsletter form not configured yet. Go to Books → Homepage Settings → Newsletter tab to add your form URL.');">
+                                <input type="email" placeholder="<?php esc_attr_e( 'Enter your email address', 'bookyol' ); ?>" required />
+                                <button type="submit"><?php echo esc_html( $s['newsletter_btn_text'] ); ?></button>
+                            </form>
+                        <?php endif; ?>
+                    </div>
                     <p class="bookyol-newsletter__note"><?php echo esc_html( $s['newsletter_note'] ); ?></p>
                 </div>
             </div>
         </section>
     <?php endif; ?>
 
-    <!-- ══════ ARTICLES ══════ -->
+    <!-- ══════ 15. ARTICLES ══════ -->
     <?php if ( ! empty( $s['articles_show'] ) ) :
         $articles = get_posts( array(
             'post_type'      => $s['articles_source'] === 'books' ? 'bookyol_book' : 'post',
@@ -332,41 +489,41 @@ if ( ! empty( $s['hero_title_highlight'] ) ) {
         if ( ! empty( $articles ) ) :
             $bg_variants = array( 'blue', 'coral', 'violet', 'green', 'amber' );
             ?>
-        <section class="bookyol-section bookyol-section--gray">
-            <div class="bookyol-container">
-                <div class="bookyol-section__header">
-                    <div class="bookyol-section__label">
-                        <span class="bookyol-section__dot" style="background: <?php echo esc_attr( $s['articles_color'] ); ?>;"></span>
-                        <h2 class="bookyol-section__title"><?php echo esc_html( $s['articles_title'] ); ?></h2>
+            <section class="bookyol-section">
+                <div class="bookyol-container">
+                    <div class="bookyol-section__header">
+                        <div class="bookyol-section__label">
+                            <span class="bookyol-section__dot" style="background: <?php echo esc_attr( $s['articles_color'] ); ?>;"></span>
+                            <h2 class="bookyol-section__title"><?php echo esc_html( $s['articles_title'] ); ?></h2>
+                        </div>
+                    </div>
+                    <div class="bookyol-articles-grid">
+                        <?php foreach ( $articles as $i => $article ) :
+                            $thumb = has_post_thumbnail( $article->ID ) ? get_the_post_thumbnail_url( $article->ID, 'medium_large' ) : '';
+                            if ( ! $thumb && $s['articles_source'] === 'books' ) {
+                                $thumb = bookyol_book_cover_url( $article->ID );
+                            }
+                            $excerpt = $article->post_excerpt ? $article->post_excerpt : wp_trim_words( $article->post_content, 25 );
+                            $bg      = $bg_variants[ $i % count( $bg_variants ) ];
+                            ?>
+                            <a class="bookyol-article-card" href="<?php echo esc_url( get_permalink( $article->ID ) ); ?>">
+                                <div class="bookyol-article-card__img bookyol-article-card__img--<?php echo esc_attr( $bg ); ?>">
+                                    <?php if ( $thumb ) : ?>
+                                        <img src="<?php echo esc_url( $thumb ); ?>" alt="<?php echo esc_attr( get_the_title( $article->ID ) ); ?>" loading="lazy">
+                                    <?php else : ?>
+                                        <span>📝</span>
+                                    <?php endif; ?>
+                                </div>
+                                <div class="bookyol-article-card__body">
+                                    <span class="bookyol-article-card__tag" style="color: <?php echo esc_attr( $s['articles_color'] ); ?>;"><?php echo esc_html( get_the_date( '', $article->ID ) ); ?></span>
+                                    <h3 class="bookyol-article-card__title"><?php echo esc_html( get_the_title( $article->ID ) ); ?></h3>
+                                    <p class="bookyol-article-card__excerpt"><?php echo esc_html( $excerpt ); ?></p>
+                                </div>
+                            </a>
+                        <?php endforeach; ?>
                     </div>
                 </div>
-                <div class="bookyol-articles-grid">
-                    <?php foreach ( $articles as $i => $article ) :
-                        $thumb = has_post_thumbnail( $article->ID ) ? get_the_post_thumbnail_url( $article->ID, 'medium_large' ) : '';
-                        if ( ! $thumb && $s['articles_source'] === 'books' ) {
-                            $thumb = bookyol_book_cover_url( $article->ID );
-                        }
-                        $excerpt = $article->post_excerpt ? $article->post_excerpt : wp_trim_words( $article->post_content, 25 );
-                        $bg      = $bg_variants[ $i % count( $bg_variants ) ];
-                        ?>
-                        <a class="bookyol-article-card" href="<?php echo esc_url( get_permalink( $article->ID ) ); ?>">
-                            <div class="bookyol-article-card__img bookyol-article-card__img--<?php echo esc_attr( $bg ); ?>">
-                                <?php if ( $thumb ) : ?>
-                                    <img src="<?php echo esc_url( $thumb ); ?>" alt="<?php echo esc_attr( get_the_title( $article->ID ) ); ?>" loading="lazy">
-                                <?php else : ?>
-                                    <span>📝</span>
-                                <?php endif; ?>
-                            </div>
-                            <div class="bookyol-article-card__body">
-                                <span class="bookyol-article-card__tag" style="color: <?php echo esc_attr( $s['articles_color'] ); ?>;"><?php echo esc_html( get_the_date( '', $article->ID ) ); ?></span>
-                                <h3 class="bookyol-article-card__title"><?php echo esc_html( get_the_title( $article->ID ) ); ?></h3>
-                                <p class="bookyol-article-card__excerpt"><?php echo esc_html( $excerpt ); ?></p>
-                            </div>
-                        </a>
-                    <?php endforeach; ?>
-                </div>
-            </div>
-        </section>
+            </section>
         <?php endif; ?>
     <?php endif; ?>
 
