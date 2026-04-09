@@ -2,7 +2,7 @@
 /**
  * Plugin Name: BookYol Affiliate Engine
  * Description: Book affiliate link management with geo-routing, click tracking, and display shortcodes for BookYol.com
- * Version: 4.0.0
+ * Version: 4.0.1
  * Author: Mahmoud Omar
  * Author URI: https://mahmoudomar.com
  * Text Domain: bookyol
@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'BOOKYOL_VERSION', '4.0.0' );
+define( 'BOOKYOL_VERSION', '4.0.1' );
 define( 'BOOKYOL_PATH', plugin_dir_path( __FILE__ ) );
 define( 'BOOKYOL_URL', plugin_dir_url( __FILE__ ) );
 define( 'BOOKYOL_FILE', __FILE__ );
@@ -121,6 +121,7 @@ add_filter( 'theme_page_templates', function ( $templates ) {
     return $templates;
 } );
 
+// v4.0.1: Priority 999 so we always run after Astra and other plugins.
 add_filter( 'template_include', function ( $template ) {
     if ( is_page() && get_page_template_slug() === 'bookyol-homepage' ) {
         $t = BOOKYOL_PATH . 'templates/page-homepage.php';
@@ -135,7 +136,7 @@ add_filter( 'template_include', function ( $template ) {
         if ( file_exists( $t ) ) return $t;
     }
     return $template;
-} );
+}, 999 );
 
 // Astra compatibility filters — cover homepage, single book, and category archive.
 add_filter( 'astra_the_title_enabled', function ( $enabled ) {
