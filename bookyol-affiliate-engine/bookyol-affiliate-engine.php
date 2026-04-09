@@ -2,7 +2,7 @@
 /**
  * Plugin Name: BookYol Affiliate Engine
  * Description: Book affiliate link management with geo-routing, click tracking, and display shortcodes for BookYol.com
- * Version: 4.1.0
+ * Version: 4.2.0
  * Author: Mahmoud Omar
  * Author URI: https://mahmoudomar.com
  * Text Domain: bookyol
@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'BOOKYOL_VERSION', '4.1.0' );
+define( 'BOOKYOL_VERSION', '4.2.0' );
 define( 'BOOKYOL_PATH', plugin_dir_path( __FILE__ ) );
 define( 'BOOKYOL_URL', plugin_dir_url( __FILE__ ) );
 define( 'BOOKYOL_FILE', __FILE__ );
@@ -72,6 +72,7 @@ function bookyol_enqueue_frontend() {
         );
     }
 
+    // Load fonts on single book pages and category archives for the rich templates.
     if ( is_singular( 'bookyol_book' ) || is_tax( 'book_category' ) ) {
         wp_enqueue_style(
             'bookyol-google-fonts',
@@ -104,7 +105,6 @@ function bookyol_enqueue_frontend() {
         );
     }
 }
-add_action( 'wp_enqueue_scripts', 'bookyol_enqueue_frontend' );
 
 // Admin bar link to Homepage Settings.
 add_action( 'admin_bar_menu', function ( $wp_admin_bar ) {
@@ -129,6 +129,7 @@ add_action( 'wp_footer', function () {
     <a href="<?php echo esc_url( $url ); ?>" style="position:fixed;bottom:20px;right:20px;z-index:9999;background:#7C5CFC;color:#fff;padding:12px 20px;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;box-shadow:0 4px 20px rgba(124,92,252,0.4);text-decoration:none;">⚙️ Edit Homepage Sections</a>
     <?php
 } );
+add_action( 'wp_enqueue_scripts', 'bookyol_enqueue_frontend' );
 
 /* ==========================================================================
    Homepage Template Integration (Astra-compatible)
@@ -190,6 +191,12 @@ add_action( 'wp_head', function () {
     }
     ?>
     <style id="bookyol-astra-reset">
+        /* ============================================================
+           Force full-width canvas on the BookYol homepage template.
+           Astra (and most themes) wrap .entry-content in a max-width
+           container with horizontal padding. These rules collapse all
+           of that so .bookyol-home renders edge-to-edge.
+           ============================================================ */
         body.page-template-bookyol-homepage .site-content,
         body.page-template-bookyol-homepage .site-content > .ast-container,
         body.page-template-bookyol-homepage .ast-container,
@@ -205,12 +212,15 @@ add_action( 'wp_head', function () {
             margin-left: 0 !important;
             margin-right: 0 !important;
         }
+
         body.page-template-bookyol-homepage .entry-header,
         body.page-template-bookyol-homepage .ast-single-post .entry-header,
         body.page-template-bookyol-homepage .page-title,
         body.page-template-bookyol-homepage .entry-title {
             display: none !important;
         }
+
+        /* If Astra still constrains .entry-content, break out with 100vw. */
         body.page-template-bookyol-homepage .entry-content > .bookyol-home {
             width: 100vw !important;
             position: relative !important;
@@ -220,9 +230,14 @@ add_action( 'wp_head', function () {
             margin-right: -50vw !important;
             max-width: 100vw !important;
         }
+
+        /* Kill default content-area padding that Astra injects. */
         body.page-template-bookyol-homepage .site-content .ast-container {
             padding: 0 !important;
         }
+
+        /* Remove any inherited typography margins on our headings/paragraphs
+           that would push sections apart. */
         body.page-template-bookyol-homepage .bookyol-home h1,
         body.page-template-bookyol-homepage .bookyol-home h2,
         body.page-template-bookyol-homepage .bookyol-home h3,
@@ -233,6 +248,7 @@ add_action( 'wp_head', function () {
     <?php
 } );
 
+/* Add our own body class so the reset above can target the template reliably. */
 add_filter( 'body_class', function ( $classes ) {
     if ( bookyol_is_homepage() ) {
         $classes[] = 'page-template-bookyol-homepage';
@@ -323,6 +339,7 @@ add_action( 'wp_head', function () {
         html body.single-post .ast-single-post-order .entry-header {
             display: none !important;
         }
+        /* Break our wrapper to viewport width. */
         html body.single-post .entry-content > .bookyol-blog,
         html body.single-post .bookyol-blog {
             width: 100vw !important;
