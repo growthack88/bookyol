@@ -1,17 +1,16 @@
 <?php
 /**
  * Template Name: BookYol Single Book
- * Single book display template — v3.3.0 (robust, error-safe).
+ * Single book display — v3.4.0 (bulletproof, no fatal errors)
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-// Ensure this is a valid book post.
 if ( ! have_posts() ) {
     get_header();
-    echo '<div class="bookyol-single__container" style="padding:60px 24px;text-align:center;"><h1>Book not found</h1></div>';
+    echo '<div style="max-width:800px;margin:60px auto;padding:24px;text-align:center;"><h1>Book not found</h1></div>';
     get_footer();
     return;
 }
@@ -19,91 +18,77 @@ if ( ! have_posts() ) {
 the_post();
 get_header();
 
-// Get book data safely.
-$book_id  = get_the_ID();
-$title    = get_the_title();
-$cover    = get_post_meta( $book_id, '_bookyol_cover_url', true );
-if ( empty( $cover ) && has_post_thumbnail( $book_id ) ) {
-    $cover = get_the_post_thumbnail_url( $book_id, 'large' );
-}
-$author   = get_post_meta( $book_id, '_bookyol_book_author', true );
-$rating   = floatval( get_post_meta( $book_id, '_bookyol_rating', true ) );
-$pages    = get_post_meta( $book_id, '_bookyol_pages', true );
-$isbn     = get_post_meta( $book_id, '_bookyol_isbn', true );
-$best_for = get_post_meta( $book_id, '_bookyol_best_for', true );
+$book_id   = get_the_ID();
+$title     = get_the_title();
+$cover     = get_post_meta( $book_id, '_bookyol_cover_url', true );
+$author    = get_post_meta( $book_id, '_bookyol_book_author', true );
+$rating    = floatval( get_post_meta( $book_id, '_bookyol_rating', true ) );
+$pages     = get_post_meta( $book_id, '_bookyol_pages', true );
+$isbn      = get_post_meta( $book_id, '_bookyol_isbn', true );
+$best_for  = get_post_meta( $book_id, '_bookyol_best_for', true );
+$book_slug = get_post_field( 'post_name', $book_id );
 
-// Build star rating string (full, half, empty).
-$full_stars  = $rating ? (int) floor( $rating ) : 0;
-if ( $full_stars < 0 ) $full_stars = 0;
-if ( $full_stars > 5 ) $full_stars = 5;
-$half_star   = ( ( $rating - $full_stars ) >= 0.5 );
-$empty_stars = 5 - $full_stars - ( $half_star ? 1 : 0 );
-if ( $empty_stars < 0 ) $empty_stars = 0;
-$stars_html  = str_repeat( '★', $full_stars ) . ( $half_star ? '★' : '' ) . str_repeat( '☆', $empty_stars );
+// Stars
+$full  = $rating ? min( (int) floor( $rating ), 5 ) : 0;
+$empty = max( 5 - $full, 0 );
+$stars = str_repeat( '★', $full ) . str_repeat( '☆', $empty );
 
-// Get affiliate links safely.
-$platform_config = array(
-    'everand'   => array( 'name' => 'Everand',      'color' => '#7C5CFC', 'icon' => '📱', 'label' => 'Read Unlimited' ),
-    'librofm'   => array( 'name' => 'Libro.fm',     'color' => '#FF6B6B', 'icon' => '🎧', 'label' => 'Listen Audiobook' ),
-    'ebookscom' => array( 'name' => 'Ebooks.com',   'color' => '#4A90D9', 'icon' => '📖', 'label' => 'Buy Ebook' ),
-    'bookshop'  => array( 'name' => 'Bookshop.org', 'color' => '#2ECC87', 'icon' => '📚', 'label' => 'Buy Physical' ),
-    'kobo'      => array( 'name' => 'Kobo',         'color' => '#F5A623', 'icon' => '📕', 'label' => 'Read on Kobo' ),
-    'jamalon'   => array( 'name' => 'Jamalon',      'color' => '#E84393', 'icon' => '🌍', 'label' => 'Buy on Jamalon' ),
+// Affiliate links — simple array build
+$platforms = array(
+    'everand'   => array( 'Everand',      '#7C5CFC', '📱', 'Read Unlimited' ),
+    'librofm'   => array( 'Libro.fm',     '#FF6B6B', '🎧', 'Listen Audiobook' ),
+    'ebookscom' => array( 'Ebooks.com',   '#4A90D9', '📖', 'Buy Ebook' ),
+    'bookshop'  => array( 'Bookshop.org', '#2ECC87', '📚', 'Buy Physical' ),
+    'kobo'      => array( 'Kobo',         '#F5A623', '📕', 'Read on Kobo' ),
+    'jamalon'   => array( 'Jamalon',      '#E84393', '🌍', 'Buy on Jamalon' ),
 );
 
-$available_links = array();
-foreach ( $platform_config as $slug => $info ) {
-    $url = get_post_meta( $book_id, '_bookyol_link_' . $slug, true );
-    if ( ! empty( $url ) && $url !== 'https://' && filter_var( $url, FILTER_VALIDATE_URL ) ) {
-        $available_links[ $slug ] = array_merge( $info, array( 'url' => $url ) );
+$links = array();
+foreach ( $platforms as $key => $info ) {
+    $u = get_post_meta( $book_id, '_bookyol_link_' . $key, true );
+    if ( ! empty( $u ) && $u !== 'https://' ) {
+        $links[ $key ] = $info;
     }
 }
 
-// Geo routing with robust fallback.
-$primary_platform    = null;
-$secondary_platforms = array();
-
+// Geo priority — simple fallback
+$ordered_keys = array_keys( $links );
 try {
     if ( class_exists( 'BookYol_Geo_Router' ) ) {
         $geo      = new BookYol_Geo_Router();
-        $priority = method_exists( $geo, 'get_platform_priority' ) ? $geo->get_platform_priority() : array();
-        if ( is_array( $priority ) && ! empty( $priority ) ) {
-            foreach ( $priority as $p ) {
-                if ( isset( $available_links[ $p ] ) ) {
-                    if ( $primary_platform === null ) {
-                        $primary_platform = $p;
-                    } else {
-                        $secondary_platforms[] = $p;
-                    }
-                }
+        $priority = $geo->get_platform_priority();
+        $sorted   = array();
+        foreach ( $priority as $p ) {
+            if ( isset( $links[ $p ] ) ) {
+                $sorted[] = $p;
             }
         }
+        // Add any links not in priority
+        foreach ( $ordered_keys as $k ) {
+            if ( ! in_array( $k, $sorted, true ) ) {
+                $sorted[] = $k;
+            }
+        }
+        $ordered_keys = $sorted;
     }
 } catch ( \Throwable $e ) {
-    // Silent fallback — will use the array_keys fallback below.
-    $primary_platform    = null;
-    $secondary_platforms = array();
+    // keep $ordered_keys as-is
 }
 
-// Fallback if geo routing didn't surface a primary.
-if ( $primary_platform === null && ! empty( $available_links ) ) {
-    $keys                = array_keys( $available_links );
-    $primary_platform    = $keys[0];
-    $secondary_platforms = array_slice( $keys, 1 );
-}
+$primary_key = ! empty( $ordered_keys ) ? $ordered_keys[0] : null;
+$secondary_keys = array_slice( $ordered_keys, 1 );
 
-// Get categories safely.
+// Categories
 $book_terms = array();
 if ( taxonomy_exists( 'book_category' ) ) {
-    $maybe = wp_get_post_terms( $book_id, 'book_category' );
-    if ( ! is_wp_error( $maybe ) && is_array( $maybe ) ) {
-        $book_terms = $maybe;
+    $t = wp_get_post_terms( $book_id, 'book_category' );
+    if ( ! is_wp_error( $t ) ) {
+        $book_terms = $t;
     }
 }
 
-// Related books.
-$related_books = array();
-$related_args  = array(
+// Related books
+$rel_args = array(
     'post_type'      => 'bookyol_book',
     'posts_per_page' => 5,
     'post__not_in'   => array( $book_id ),
@@ -111,183 +96,167 @@ $related_args  = array(
     'orderby'        => 'rand',
 );
 if ( ! empty( $book_terms ) ) {
-    $term_ids = wp_list_pluck( $book_terms, 'term_id' );
-    if ( ! empty( $term_ids ) ) {
-        $related_args['tax_query'] = array(
-            array( 'taxonomy' => 'book_category', 'field' => 'term_id', 'terms' => $term_ids ),
-        );
-    }
+    $tids = wp_list_pluck( $book_terms, 'term_id' );
+    $rel_args['tax_query'] = array(
+        array( 'taxonomy' => 'book_category', 'field' => 'term_id', 'terms' => $tids ),
+    );
 }
-$related_books = get_posts( $related_args );
+$related = get_posts( $rel_args );
 
-$book_slug = get_post_field( 'post_name', $book_id );
+// Description
+$desc = '';
+if ( has_excerpt() ) {
+    $desc .= '<p>' . wp_kses_post( get_the_excerpt() ) . '</p>';
+}
+ob_start();
+the_content();
+$desc .= ob_get_clean();
 ?>
 
 <div class="bookyol-single">
-    <div class="bookyol-single__container">
+<div class="bookyol-single__container">
 
-        <!-- Breadcrumb -->
-        <nav class="bookyol-crumb">
-            <a href="<?php echo esc_url( home_url( '/' ) ); ?>"><?php esc_html_e( 'Home', 'bookyol' ); ?></a>
-            <span class="bookyol-crumb__sep">›</span>
-            <a href="<?php echo esc_url( home_url( '/books/' ) ); ?>"><?php esc_html_e( 'Books', 'bookyol' ); ?></a>
-            <?php if ( ! empty( $book_terms ) ) : ?>
-                <span class="bookyol-crumb__sep">›</span>
-                <a href="<?php echo esc_url( get_term_link( $book_terms[0] ) ); ?>"><?php echo esc_html( $book_terms[0]->name ); ?></a>
-            <?php endif; ?>
-            <span class="bookyol-crumb__sep">›</span>
-            <span class="bookyol-crumb__current"><?php echo esc_html( $title ); ?></span>
-        </nav>
+<!-- Breadcrumb -->
+<nav class="bookyol-crumb">
+  <a href="<?php echo esc_url( home_url( '/' ) ); ?>">Home</a>
+  <span class="bookyol-crumb__sep">›</span>
+  <a href="<?php echo esc_url( home_url( '/books/' ) ); ?>">Books</a>
+  <?php if ( ! empty( $book_terms ) ) : ?>
+    <span class="bookyol-crumb__sep">›</span>
+    <a href="<?php echo esc_url( get_term_link( $book_terms[0] ) ); ?>"><?php echo esc_html( $book_terms[0]->name ); ?></a>
+  <?php endif; ?>
+  <span class="bookyol-crumb__sep">›</span>
+  <span class="bookyol-crumb__current"><?php echo esc_html( $title ); ?></span>
+</nav>
 
-        <!-- Main Content Grid -->
-        <div class="bookyol-single__grid">
+<!-- Grid -->
+<div class="bookyol-single__grid">
 
-            <!-- LEFT: Cover + Quick Info -->
-            <div class="bookyol-single__left">
-                <?php if ( $cover ) : ?>
-                    <div class="bookyol-single__cover">
-                        <img src="<?php echo esc_url( $cover ); ?>" alt="<?php echo esc_attr( $title ); ?>" />
-                    </div>
-                <?php endif; ?>
+  <!-- LEFT -->
+  <div class="bookyol-single__left">
+    <?php if ( $cover ) : ?>
+      <div class="bookyol-single__cover">
+        <img src="<?php echo esc_url( $cover ); ?>" alt="<?php echo esc_attr( $title ); ?>" />
+      </div>
+    <?php endif; ?>
 
-                <div class="bookyol-single__meta-box">
-                    <?php if ( $pages ) : ?>
-                        <div class="bookyol-single__meta-row">
-                            <span class="meta-label">📄 <?php esc_html_e( 'Pages', 'bookyol' ); ?></span>
-                            <span class="meta-value"><?php echo esc_html( $pages ); ?></span>
-                        </div>
-                    <?php endif; ?>
-                    <?php if ( $isbn ) : ?>
-                        <div class="bookyol-single__meta-row">
-                            <span class="meta-label">🔢 <?php esc_html_e( 'ISBN', 'bookyol' ); ?></span>
-                            <span class="meta-value"><?php echo esc_html( $isbn ); ?></span>
-                        </div>
-                    <?php endif; ?>
-                    <?php if ( $best_for ) : ?>
-                        <div class="bookyol-single__meta-row">
-                            <span class="meta-label">🎯 <?php esc_html_e( 'Best For', 'bookyol' ); ?></span>
-                            <span class="meta-value"><?php echo esc_html( $best_for ); ?></span>
-                        </div>
-                    <?php endif; ?>
-                    <?php if ( $rating ) : ?>
-                        <div class="bookyol-single__meta-row">
-                            <span class="meta-label">⭐ <?php esc_html_e( 'Rating', 'bookyol' ); ?></span>
-                            <span class="meta-value"><?php echo esc_html( $rating ); ?>/5</span>
-                        </div>
-                    <?php endif; ?>
-                </div>
-            </div>
+    <div class="bookyol-single__meta-box">
+      <?php if ( $pages ) : ?>
+        <div class="bookyol-single__meta-row"><span class="meta-label">📄 Pages</span><span class="meta-value"><?php echo esc_html( $pages ); ?></span></div>
+      <?php endif; ?>
+      <?php if ( $isbn ) : ?>
+        <div class="bookyol-single__meta-row"><span class="meta-label">🔢 ISBN</span><span class="meta-value"><?php echo esc_html( $isbn ); ?></span></div>
+      <?php endif; ?>
+      <?php if ( $best_for ) : ?>
+        <div class="bookyol-single__meta-row"><span class="meta-label">🎯 Best For</span><span class="meta-value"><?php echo esc_html( $best_for ); ?></span></div>
+      <?php endif; ?>
+      <?php if ( $rating ) : ?>
+        <div class="bookyol-single__meta-row"><span class="meta-label">⭐ Rating</span><span class="meta-value"><?php echo esc_html( $rating ); ?>/5</span></div>
+      <?php endif; ?>
+    </div>
+  </div>
 
-            <!-- RIGHT: Info + CTAs -->
-            <div class="bookyol-single__right">
+  <!-- RIGHT -->
+  <div class="bookyol-single__right">
 
-                <h1 class="bookyol-single__title"><?php echo esc_html( $title ); ?></h1>
+    <h1 class="bookyol-single__title"><?php echo esc_html( $title ); ?></h1>
 
-                <?php if ( $author ) : ?>
-                    <p class="bookyol-single__author"><?php esc_html_e( 'by', 'bookyol' ); ?> <strong><?php echo esc_html( $author ); ?></strong></p>
-                <?php endif; ?>
+    <?php if ( $author ) : ?>
+      <p class="bookyol-single__author">by <strong><?php echo esc_html( $author ); ?></strong></p>
+    <?php endif; ?>
 
-                <?php if ( $rating ) : ?>
-                    <div class="bookyol-single__stars">
-                        <span class="stars-icons"><?php echo esc_html( $stars_html ); ?></span>
-                        <span class="stars-num"><?php echo esc_html( $rating ); ?> <?php esc_html_e( 'out of 5', 'bookyol' ); ?></span>
-                    </div>
-                <?php endif; ?>
+    <?php if ( $rating ) : ?>
+      <div class="bookyol-single__stars">
+        <span class="stars-icons"><?php echo esc_html( $stars ); ?></span>
+        <span class="stars-num"><?php echo esc_html( $rating ); ?> out of 5</span>
+      </div>
+    <?php endif; ?>
 
-                <?php if ( ! empty( $book_terms ) ) : ?>
-                    <div class="bookyol-single__tags">
-                        <?php foreach ( $book_terms as $bt ) : ?>
-                            <a href="<?php echo esc_url( get_term_link( $bt ) ); ?>" class="bookyol-single__tag"><?php echo esc_html( $bt->name ); ?></a>
-                        <?php endforeach; ?>
-                    </div>
-                <?php endif; ?>
+    <?php if ( ! empty( $book_terms ) ) : ?>
+      <div class="bookyol-single__tags">
+        <?php foreach ( $book_terms as $bt ) : ?>
+          <a href="<?php echo esc_url( get_term_link( $bt ) ); ?>" class="bookyol-single__tag"><?php echo esc_html( $bt->name ); ?></a>
+        <?php endforeach; ?>
+      </div>
+    <?php endif; ?>
 
-                <div class="bookyol-single__desc">
-                    <?php
-                    if ( has_excerpt() ) {
-                        echo '<p>' . wp_kses_post( get_the_excerpt() ) . '</p>';
-                    }
-                    the_content();
-                    ?>
-                </div>
+    <div class="bookyol-single__desc">
+      <?php echo wp_kses_post( $desc ); ?>
+    </div>
 
-                <?php if ( ! empty( $available_links ) ) : ?>
-                    <div class="bookyol-single__cta-section">
-                        <h3 class="bookyol-single__cta-heading"><?php esc_html_e( 'Get this book', 'bookyol' ); ?></h3>
+    <!-- ═══ GET THIS BOOK ═══ -->
+    <?php if ( ! empty( $links ) ) : ?>
+      <div class="bookyol-single__cta-section">
+        <h3 class="bookyol-single__cta-heading">Get this book</h3>
 
-                        <?php if ( $primary_platform && isset( $available_links[ $primary_platform ] ) ) :
-                            $pdata = $available_links[ $primary_platform ];
-                            ?>
-                            <a href="<?php echo esc_url( home_url( '/go/' . $primary_platform . '/' . $book_slug . '/' ) ); ?>"
-                               class="bookyol-single__cta-primary"
-                               style="background: <?php echo esc_attr( $pdata['color'] ); ?>;"
-                               target="_blank" rel="nofollow sponsored noopener">
-                                <span class="cta-icon"><?php echo esc_html( $pdata['icon'] ); ?></span>
-                                <span class="cta-text">
-                                    <strong><?php echo esc_html( $pdata['label'] ); ?></strong>
-                                    <small><?php esc_html_e( 'on', 'bookyol' ); ?> <?php echo esc_html( $pdata['name'] ); ?></small>
-                                </span>
-                                <span class="cta-arrow">→</span>
-                            </a>
-                        <?php endif; ?>
-
-                        <?php if ( ! empty( $secondary_platforms ) ) : ?>
-                            <div class="bookyol-single__cta-grid">
-                                <?php foreach ( $secondary_platforms as $sp ) :
-                                    if ( ! isset( $available_links[ $sp ] ) ) continue;
-                                    $sdata = $available_links[ $sp ];
-                                    ?>
-                                    <a href="<?php echo esc_url( home_url( '/go/' . $sp . '/' . $book_slug . '/' ) ); ?>"
-                                       class="bookyol-single__cta-secondary"
-                                       target="_blank" rel="nofollow sponsored noopener">
-                                        <span><?php echo esc_html( $sdata['icon'] ); ?></span>
-                                        <span><?php echo esc_html( $sdata['name'] ); ?></span>
-                                    </a>
-                                <?php endforeach; ?>
-                            </div>
-                        <?php endif; ?>
-
-                        <p class="bookyol-single__cta-note"><?php esc_html_e( 'Clicking these links supports BookYol at no extra cost to you.', 'bookyol' ); ?></p>
-                    </div>
-                <?php endif; ?>
-
-            </div>
-        </div>
-
-        <?php if ( ! empty( $related_books ) ) : ?>
-            <div class="bookyol-single__related">
-                <h2 class="bookyol-single__related-title"><?php esc_html_e( 'You might also like', 'bookyol' ); ?></h2>
-                <div class="bookyol-books-grid" style="grid-template-columns: repeat(5, 1fr);">
-                    <?php foreach ( $related_books as $rel ) :
-                        $rc = get_post_meta( $rel->ID, '_bookyol_cover_url', true );
-                        if ( empty( $rc ) && has_post_thumbnail( $rel->ID ) ) {
-                            $rc = get_the_post_thumbnail_url( $rel->ID, 'medium' );
-                        }
-                        $ra = get_post_meta( $rel->ID, '_bookyol_book_author', true );
-                        $rr = get_post_meta( $rel->ID, '_bookyol_rating', true );
-                        ?>
-                        <a href="<?php echo esc_url( get_permalink( $rel->ID ) ); ?>" class="bookyol-book-card">
-                            <div class="bookyol-book-card__img">
-                                <?php if ( $rr ) : ?>
-                                    <span class="bookyol-book-card__rating"><span class="star">★</span> <?php echo esc_html( $rr ); ?></span>
-                                <?php endif; ?>
-                                <?php if ( $rc ) : ?>
-                                    <img src="<?php echo esc_url( $rc ); ?>" alt="<?php echo esc_attr( $rel->post_title ); ?>" loading="lazy">
-                                <?php endif; ?>
-                            </div>
-                            <div class="bookyol-book-card__info">
-                                <div class="bookyol-book-card__title"><?php echo esc_html( $rel->post_title ); ?></div>
-                                <?php if ( $ra ) : ?>
-                                    <div class="bookyol-book-card__author"><?php echo esc_html( $ra ); ?></div>
-                                <?php endif; ?>
-                            </div>
-                        </a>
-                    <?php endforeach; ?>
-                </div>
-            </div>
+        <?php if ( $primary_key ) :
+          $pi = $links[ $primary_key ]; ?>
+          <a href="<?php echo esc_url( home_url( '/go/' . $primary_key . '/' . $book_slug . '/' ) ); ?>"
+             class="bookyol-single__cta-primary"
+             style="background:<?php echo esc_attr( $pi[1] ); ?>;"
+             target="_blank" rel="nofollow sponsored noopener">
+            <span class="cta-icon"><?php echo $pi[2]; ?></span>
+            <span class="cta-text"><strong><?php echo esc_html( $pi[3] ); ?></strong><small>on <?php echo esc_html( $pi[0] ); ?></small></span>
+            <span class="cta-arrow">→</span>
+          </a>
         <?php endif; ?>
 
+        <?php if ( ! empty( $secondary_keys ) ) : ?>
+          <div class="bookyol-single__cta-grid">
+            <?php foreach ( $secondary_keys as $sk ) :
+              if ( ! isset( $links[ $sk ] ) ) continue;
+              $si = $links[ $sk ]; ?>
+              <a href="<?php echo esc_url( home_url( '/go/' . $sk . '/' . $book_slug . '/' ) ); ?>"
+                 class="bookyol-single__cta-secondary"
+                 target="_blank" rel="nofollow sponsored noopener">
+                <span><?php echo $si[2]; ?></span>
+                <span><?php echo esc_html( $si[0] ); ?></span>
+              </a>
+            <?php endforeach; ?>
+          </div>
+        <?php endif; ?>
+
+        <p class="bookyol-single__cta-note">Clicking these links supports BookYol at no extra cost to you.</p>
+      </div>
+    <?php else : ?>
+      <div class="bookyol-single__cta-section" style="text-align:center;color:#999;">
+        <p>📚 This book will be available on multiple platforms soon.</p>
+      </div>
+    <?php endif; ?>
+
+  </div>
+</div>
+
+<!-- RELATED BOOKS -->
+<?php if ( ! empty( $related ) ) : ?>
+  <div class="bookyol-single__related">
+    <h2 class="bookyol-single__related-title">You might also like</h2>
+    <div class="bookyol-books-grid" style="display:grid;grid-template-columns:repeat(5,1fr);gap:20px;">
+      <?php foreach ( $related as $r ) :
+        $rc = get_post_meta( $r->ID, '_bookyol_cover_url', true );
+        $ra = get_post_meta( $r->ID, '_bookyol_book_author', true );
+        $rr = get_post_meta( $r->ID, '_bookyol_rating', true );
+      ?>
+        <a href="<?php echo esc_url( get_permalink( $r->ID ) ); ?>" class="bookyol-book-card" style="display:block;text-decoration:none;">
+          <div class="bookyol-book-card__img">
+            <?php if ( $rr ) : ?>
+              <span class="bookyol-book-card__rating"><span class="star">★</span> <?php echo esc_html( $rr ); ?></span>
+            <?php endif; ?>
+            <?php if ( $rc ) : ?>
+              <img src="<?php echo esc_url( $rc ); ?>" alt="<?php echo esc_attr( $r->post_title ); ?>" loading="lazy" />
+            <?php endif; ?>
+          </div>
+          <div class="bookyol-book-card__info">
+            <div class="bookyol-book-card__title"><?php echo esc_html( $r->post_title ); ?></div>
+            <div class="bookyol-book-card__author"><?php echo esc_html( $ra ); ?></div>
+          </div>
+        </a>
+      <?php endforeach; ?>
     </div>
+  </div>
+<?php endif; ?>
+
+</div>
 </div>
 
 <?php get_footer(); ?>
