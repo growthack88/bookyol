@@ -1,7 +1,7 @@
 <?php
 /**
  * Template Name: BookYol Single Book
- * Single book display — v4.0.1 (inline the_content, outer try/catch)
+ * Single book display — v4.0.2 (isolated the_content fatal catcher)
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -188,12 +188,28 @@ try {
 
                 <div class="bookyol-single__desc">
                     <?php
-                    // Excerpt first (safe — plain text).
                     if ( has_excerpt() ) {
                         echo '<p>' . esc_html( get_the_excerpt() ) . '</p>';
                     }
-                    // Main content rendered directly (standard WP pattern — avoids ob_start/wp_kses_post fragility).
-                    the_content();
+                    // v4.0.2: Isolate the_content() in its own ob_start + try/catch.
+                    // If any filter/shortcode fatals we clean the buffer and fall back
+                    // to raw post_content with minimal formatting.
+                    $the_content_html = '';
+                    try {
+                        ob_start();
+                        the_content();
+                        $the_content_html = ob_get_clean();
+                    } catch ( \Throwable $e ) {
+                        if ( ob_get_level() > 0 ) {
+                            @ob_end_clean();
+                        }
+                        if ( defined( 'WP_DEBUG_LOG' ) && WP_DEBUG_LOG ) {
+                            error_log( 'BookYol the_content() fatal on book ' . $book_id . ': ' . $e->getMessage() );
+                        }
+                        $raw = get_post_field( 'post_content', $book_id );
+                        $the_content_html = wpautop( wp_strip_all_tags( $raw ) );
+                    }
+                    echo $the_content_html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
                     ?>
                 </div>
 
@@ -282,14 +298,13 @@ try {
 
     <?php
 } catch ( \Throwable $e ) {
-    // Last-resort fallback: log the error if WP_DEBUG_LOG is on and render a minimal safe page.
     if ( defined( 'WP_DEBUG_LOG' ) && WP_DEBUG_LOG ) {
         error_log( 'BookYol single-book fatal: ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine() );
     }
     ?>
     <div style="max-width:800px;margin:60px auto;padding:24px;font-family:'DM Sans',sans-serif;">
         <h1 style="font-family:'Source Serif 4',Georgia,serif;"><?php the_title(); ?></h1>
-        <?php if ( function_exists( 'the_content' ) ) the_content(); ?>
+        <?php echo wpautop( wp_strip_all_tags( get_post_field( 'post_content', get_the_ID() ) ) ); ?>
     </div>
     <?php
 }
