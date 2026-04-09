@@ -1,0 +1,905 @@
+/* ═══════════════════════════════════════════
+   BookYol Blog Post Template — v4.1.0
+   Magazine-style single post layout
+   ═══════════════════════════════════════════ */
+
+.bookyol-blog {
+    font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: #fff;
+    color: #333;
+    padding-bottom: 80px;
+    line-height: 1.6;
+}
+
+.bookyol-blog * { box-sizing: border-box; }
+
+.bookyol-blog__container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 40px 24px 0;
+}
+
+/* ═══ Reading Progress Bar ═══ */
+.bookyol-blog__progress {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #7C5CFC, #4A90D9);
+    width: 0%;
+    z-index: 9999;
+    transition: width 0.1s linear;
+}
+
+/* ═══ Article Header ═══ */
+.bookyol-blog__header {
+    max-width: 720px;
+    margin: 0 auto 32px;
+    text-align: left;
+}
+
+.bookyol-blog__cats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.bookyol-blog__cat {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 5px 14px;
+    border-radius: 100px;
+    background: #F3F0FF;
+    color: #7C5CFC !important;
+    text-decoration: none !important;
+    transition: all 0.2s;
+}
+
+.bookyol-blog__cat:hover {
+    background: #7C5CFC;
+    color: #fff !important;
+}
+
+.bookyol-blog__title {
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-size: clamp(32px, 5vw, 48px) !important;
+    font-weight: 700 !important;
+    line-height: 1.15 !important;
+    color: #1A1A1A !important;
+    margin: 0 0 16px 0 !important;
+    letter-spacing: -0.02em;
+}
+
+.bookyol-blog__excerpt {
+    font-size: 20px;
+    line-height: 1.5;
+    color: #666;
+    margin: 0 0 24px 0;
+    font-weight: 400;
+}
+
+.bookyol-blog__meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    padding: 16px 0;
+    border-top: 1px solid #EEEBE6;
+    border-bottom: 1px solid #EEEBE6;
+    flex-wrap: wrap;
+}
+
+.bookyol-blog__meta-author {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.bookyol-blog__avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+.bookyol-blog__author-name {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    color: #1A1A1A;
+    line-height: 1.3;
+}
+
+.bookyol-blog__date {
+    display: block;
+    font-size: 12px;
+    color: #888;
+    line-height: 1.3;
+}
+
+/* ═══ Share Buttons ═══ */
+.bookyol-blog__share {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.bookyol-blog__share-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    font-size: 14px;
+    font-weight: 700;
+    text-decoration: none !important;
+    transition: all 0.2s;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    padding: 0;
+    line-height: 1;
+}
+
+.bookyol-blog__share-btn--x  { background: #000;     color: #fff !important; }
+.bookyol-blog__share-btn--fb { background: #1877F2;  color: #fff !important; }
+.bookyol-blog__share-btn--li { background: #0A66C2;  color: #fff !important; font-size: 13px; }
+.bookyol-blog__share-btn--copy { background: #F0EDE8; color: #555 !important; }
+
+.bookyol-blog__share-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    color: inherit !important;
+}
+
+.bookyol-blog__share-btn--copy:hover {
+    background: #E8E5DF;
+    color: #333 !important;
+}
+
+/* ═══ Featured Image ═══ */
+.bookyol-blog__featured-img {
+    max-width: 960px;
+    margin: 0 auto 48px;
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+}
+
+.bookyol-blog__featured-img img {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+
+/* ═══ Main Layout (Body + Sidebar) ═══ */
+.bookyol-blog__main {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 300px;
+    gap: 56px;
+    max-width: 1100px;
+    margin: 0 auto;
+}
+
+/* ═══ Article Body ═══ */
+.bookyol-blog__body {
+    max-width: 720px;
+    min-width: 0;
+}
+
+/* ═══ Table of Contents ═══ */
+.bookyol-blog__toc {
+    background: #F8F7F4;
+    border: 1px solid #EEEBE6;
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin-bottom: 32px;
+}
+
+.bookyol-blog__toc-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 14px;
+    font-weight: 700;
+    color: #1A1A1A;
+    margin-bottom: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.bookyol-blog__toc-toggle {
+    background: none;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+    color: #888;
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+}
+
+.bookyol-blog__toc-toggle:hover { background: #EEEBE6; color: #333; }
+
+.bookyol-blog__toc.collapsed .bookyol-blog__toc-list { display: none; }
+
+.bookyol-blog__toc-list ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.bookyol-blog__toc-list li {
+    margin: 0;
+}
+
+.bookyol-blog__toc-list a {
+    display: block;
+    padding: 8px 0;
+    font-size: 14px;
+    color: #555 !important;
+    text-decoration: none !important;
+    border-bottom: 1px solid #EEEBE6;
+    transition: color 0.2s, padding-left 0.2s;
+}
+
+.bookyol-blog__toc-list li:last-child a { border-bottom: none; }
+.bookyol-blog__toc-list a:hover { color: #7C5CFC !important; padding-left: 6px; }
+
+/* ═══ Article Content Typography ═══ */
+.bookyol-blog__content {
+    font-family: 'DM Sans', -apple-system, sans-serif;
+    font-size: 18px;
+    line-height: 1.8;
+    color: #333;
+}
+
+.bookyol-blog__content p {
+    margin: 0 0 24px 0;
+    font-size: 18px;
+    line-height: 1.8;
+    color: #333;
+}
+
+.bookyol-blog__content h2 {
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-size: 30px !important;
+    font-weight: 700 !important;
+    color: #1A1A1A !important;
+    margin: 48px 0 20px 0 !important;
+    line-height: 1.25 !important;
+    letter-spacing: -0.01em;
+    scroll-margin-top: 80px;
+}
+
+.bookyol-blog__content h3 {
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-size: 23px !important;
+    font-weight: 700 !important;
+    color: #1A1A1A !important;
+    margin: 36px 0 16px 0 !important;
+    line-height: 1.3 !important;
+    scroll-margin-top: 80px;
+}
+
+.bookyol-blog__content h4 {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 19px !important;
+    font-weight: 700 !important;
+    color: #1A1A1A !important;
+    margin: 28px 0 12px 0 !important;
+}
+
+.bookyol-blog__content a {
+    color: #7C5CFC;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    text-decoration-thickness: 1px;
+    transition: color 0.2s;
+}
+
+.bookyol-blog__content a:hover {
+    color: #6A4AE8;
+    text-decoration-thickness: 2px;
+}
+
+.bookyol-blog__content strong { color: #1A1A1A; font-weight: 700; }
+.bookyol-blog__content em { font-style: italic; }
+
+.bookyol-blog__content ul,
+.bookyol-blog__content ol {
+    margin: 0 0 24px 0;
+    padding-left: 24px;
+    font-size: 18px;
+    line-height: 1.8;
+    color: #333;
+}
+
+.bookyol-blog__content ul li,
+.bookyol-blog__content ol li {
+    margin-bottom: 10px;
+    padding-left: 4px;
+}
+
+.bookyol-blog__content ul { list-style: disc; }
+.bookyol-blog__content ol { list-style: decimal; }
+
+.bookyol-blog__content blockquote {
+    border-left: 3px solid #7C5CFC;
+    background: #F8F7F4;
+    margin: 32px 0;
+    padding: 20px 28px;
+    font-style: italic;
+    font-size: 19px;
+    line-height: 1.7;
+    color: #444;
+    border-radius: 0 10px 10px 0;
+}
+
+.bookyol-blog__content blockquote p { margin-bottom: 0; font-size: 19px; }
+.bookyol-blog__content blockquote cite {
+    display: block;
+    margin-top: 12px;
+    font-size: 14px;
+    color: #888;
+    font-style: normal;
+}
+
+.bookyol-blog__content code {
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 15px;
+    background: #F3F0FF;
+    color: #5B3FD9;
+    padding: 2px 8px;
+    border-radius: 4px;
+}
+
+.bookyol-blog__content pre {
+    background: #1A1A1A;
+    color: #F0EDE8;
+    padding: 20px 24px;
+    border-radius: 10px;
+    overflow-x: auto;
+    margin: 32px 0;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.bookyol-blog__content pre code {
+    background: transparent;
+    color: inherit;
+    padding: 0;
+    font-size: 14px;
+}
+
+.bookyol-blog__content img,
+.bookyol-blog__content figure {
+    max-width: 100%;
+    height: auto;
+    border-radius: 10px;
+    margin: 32px 0;
+    display: block;
+}
+
+.bookyol-blog__content figure img { margin: 0; }
+.bookyol-blog__content figcaption {
+    text-align: center;
+    font-size: 13px;
+    color: #888;
+    margin-top: 10px;
+    font-style: italic;
+}
+
+.bookyol-blog__content hr {
+    border: none;
+    border-top: 1px solid #EEEBE6;
+    margin: 40px 0;
+}
+
+.bookyol-blog__content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 32px 0;
+    font-size: 15px;
+}
+
+.bookyol-blog__content th,
+.bookyol-blog__content td {
+    padding: 12px 16px;
+    border: 1px solid #EEEBE6;
+    text-align: left;
+}
+
+.bookyol-blog__content th {
+    background: #F8F7F4;
+    font-weight: 700;
+    color: #1A1A1A;
+}
+
+/* ═══ Tags ═══ */
+.bookyol-blog__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 40px 0 32px 0;
+    padding-top: 32px;
+    border-top: 1px solid #EEEBE6;
+}
+
+.bookyol-blog__tag {
+    display: inline-block;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 5px 14px;
+    border-radius: 100px;
+    background: #F8F7F4;
+    color: #666 !important;
+    text-decoration: none !important;
+    transition: all 0.2s;
+}
+
+.bookyol-blog__tag:hover {
+    background: #7C5CFC;
+    color: #fff !important;
+}
+
+/* ═══ Bottom Share Bar ═══ */
+.bookyol-blog__share-bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 20px 0;
+    border-top: 1px solid #EEEBE6;
+    border-bottom: 1px solid #EEEBE6;
+    margin-bottom: 40px;
+    flex-wrap: wrap;
+}
+
+.bookyol-blog__share-bottom > span {
+    font-size: 14px;
+    color: #888;
+    font-weight: 500;
+}
+
+/* ═══ Author Box ═══ */
+.bookyol-blog__author-box {
+    display: flex;
+    gap: 20px;
+    padding: 28px;
+    background: #F8F7F4;
+    border: 1px solid #EEEBE6;
+    border-radius: 14px;
+    margin-bottom: 48px;
+}
+
+.bookyol-blog__author-avatar {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+.bookyol-blog__author-info { flex: 1; }
+
+.bookyol-blog__author-label {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #7C5CFC;
+    margin-bottom: 4px;
+}
+
+.bookyol-blog__author-name-lg {
+    display: block;
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: #1A1A1A;
+    margin-bottom: 8px;
+}
+
+.bookyol-blog__author-bio {
+    font-size: 14px;
+    line-height: 1.6;
+    color: #555;
+    margin: 0;
+}
+
+/* ═══ SIDEBAR ═══ */
+.bookyol-blog__sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.bookyol-blog__sidebar-box {
+    background: #fff;
+    border: 1px solid #EEEBE6;
+    border-radius: 12px;
+    padding: 20px 22px;
+}
+
+.bookyol-blog__sidebar-box h3 {
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-size: 15px !important;
+    font-weight: 700 !important;
+    color: #1A1A1A !important;
+    margin: 0 0 14px 0 !important;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #F5F3EE;
+}
+
+/* Sidebar Newsletter */
+.bookyol-blog__sidebar-newsletter {
+    background: linear-gradient(135deg, #F3F0FF 0%, #EBE5FF 100%);
+    border: 2px solid rgba(124,92,252,0.2);
+}
+
+.bookyol-blog__sidebar-newsletter p {
+    font-size: 13px;
+    color: #555;
+    margin: 0 0 14px 0;
+    line-height: 1.5;
+}
+
+.bookyol-blog__sidebar-newsletter form {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.bookyol-blog__sidebar-newsletter input {
+    padding: 11px 14px !important;
+    border: 1px solid #EEEBE6 !important;
+    border-radius: 8px !important;
+    font-size: 13px !important;
+    font-family: 'DM Sans', sans-serif !important;
+    outline: none !important;
+    box-shadow: none !important;
+    background: #fff !important;
+    margin: 0 !important;
+    min-height: auto !important;
+}
+
+.bookyol-blog__sidebar-newsletter input:focus {
+    border-color: #7C5CFC !important;
+}
+
+.bookyol-blog__sidebar-newsletter button {
+    padding: 11px !important;
+    background: #7C5CFC !important;
+    color: #fff !important;
+    border: none !important;
+    border-radius: 8px !important;
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif !important;
+    line-height: normal !important;
+    transition: background 0.2s;
+}
+
+.bookyol-blog__sidebar-newsletter button:hover {
+    background: #6A4AE8 !important;
+}
+
+/* Sidebar Recommended Books */
+.bookyol-blog__sidebar-books {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.bookyol-blog__sidebar-books li { margin: 0; }
+
+.bookyol-blog__sidebar-books a {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid #F5F3EE;
+    text-decoration: none !important;
+    color: #333 !important;
+    transition: background 0.2s;
+}
+
+.bookyol-blog__sidebar-books li:last-child a { border-bottom: none; }
+.bookyol-blog__sidebar-books a:hover { background: #FAFAFA; }
+
+.bookyol-blog__sidebar-books img {
+    width: 44px;
+    height: 66px;
+    object-fit: cover;
+    border-radius: 4px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    flex-shrink: 0;
+}
+
+.bookyol-blog__sidebar-books strong {
+    display: block;
+    font-size: 13px;
+    line-height: 1.3;
+    color: #1A1A1A;
+    margin-bottom: 3px;
+    font-weight: 600;
+}
+
+.bookyol-blog__sidebar-books small {
+    font-size: 11px;
+    color: #888;
+}
+
+/* Sidebar Popular Posts */
+.bookyol-blog__sidebar-popular {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.bookyol-blog__sidebar-popular li { margin: 0; }
+
+.bookyol-blog__sidebar-popular a {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid #F5F3EE;
+    text-decoration: none !important;
+    color: #333 !important;
+    transition: background 0.2s;
+}
+
+.bookyol-blog__sidebar-popular li:last-child a { border-bottom: none; }
+.bookyol-blog__sidebar-popular a:hover { background: #FAFAFA; }
+
+.bookyol-blog__sidebar-popular .pop-num {
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-size: 22px;
+    font-weight: 800;
+    color: #CCC;
+    line-height: 1;
+    width: 24px;
+    flex-shrink: 0;
+}
+
+.bookyol-blog__sidebar-popular strong {
+    display: block;
+    font-size: 13px;
+    line-height: 1.4;
+    color: #1A1A1A;
+    margin-bottom: 4px;
+    font-weight: 600;
+}
+
+.bookyol-blog__sidebar-popular small {
+    font-size: 11px;
+    color: #999;
+}
+
+/* Sidebar Category Pills */
+.bookyol-blog__sidebar-cat-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.bookyol-blog__sidebar-cat-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 100px;
+    background: #F8F7F4;
+    border: 1px solid #EEEBE6;
+    font-size: 12px;
+    font-weight: 500;
+    color: #555 !important;
+    text-decoration: none !important;
+    transition: all 0.2s;
+}
+
+.bookyol-blog__sidebar-cat-pill:hover {
+    background: #7C5CFC;
+    color: #fff !important;
+    border-color: #7C5CFC;
+}
+
+.bookyol-blog__sidebar-cat-pill span {
+    font-size: 10px;
+    opacity: 0.7;
+    background: rgba(0,0,0,0.06);
+    padding: 1px 6px;
+    border-radius: 100px;
+}
+
+.bookyol-blog__sidebar-cat-pill:hover span {
+    background: rgba(255,255,255,0.2);
+    opacity: 1;
+}
+
+/* ═══ Related Posts ═══ */
+.bookyol-blog__related {
+    max-width: 1100px;
+    margin: 64px auto 0;
+    padding: 48px 0 0;
+    border-top: 1px solid #EEEBE6;
+}
+
+.bookyol-blog__related-title {
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-size: 30px !important;
+    font-weight: 700 !important;
+    color: #1A1A1A !important;
+    margin: 0 0 32px 0 !important;
+    text-align: center;
+}
+
+.bookyol-blog__related-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+}
+
+.bookyol-blog__related-card {
+    display: block;
+    background: #fff;
+    border: 1px solid #EEEBE6;
+    border-radius: 12px;
+    overflow: hidden;
+    text-decoration: none !important;
+    color: #1A1A1A !important;
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.bookyol-blog__related-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 14px 32px rgba(0,0,0,0.08);
+}
+
+.bookyol-blog__related-img {
+    position: relative;
+    aspect-ratio: 16/10;
+    overflow: hidden;
+    background: #F8F7F4;
+}
+
+.bookyol-blog__related-img img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.4s;
+}
+
+.bookyol-blog__related-card:hover .bookyol-blog__related-img img {
+    transform: scale(1.05);
+}
+
+.bookyol-blog__related-noimg {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    font-size: 48px;
+    background: linear-gradient(135deg, #F3F0FF, #EFF5FF);
+}
+
+.bookyol-blog__related-info {
+    padding: 20px 22px 24px;
+}
+
+.bookyol-blog__related-cat {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #7C5CFC;
+    margin-bottom: 10px;
+}
+
+.bookyol-blog__related-card h3 {
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-size: 19px !important;
+    font-weight: 700 !important;
+    line-height: 1.3 !important;
+    color: #1A1A1A !important;
+    margin: 0 0 10px 0 !important;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.bookyol-blog__related-date {
+    font-size: 12px;
+    color: #999;
+}
+
+/* ═══ Back to Top ═══ */
+.bookyol-blog__back-top {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: #7C5CFC;
+    color: #fff;
+    border: none;
+    font-size: 20px;
+    font-weight: 700;
+    cursor: pointer;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(20px);
+    transition: all 0.3s;
+    z-index: 999;
+    box-shadow: 0 4px 16px rgba(124,92,252,0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    line-height: 1;
+}
+
+.bookyol-blog__back-top:hover {
+    background: #6A4AE8;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(124,92,252,0.4);
+}
+
+.bookyol-blog__back-top.visible {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+}
+
+/* ═══ Responsive ═══ */
+@media (max-width: 1024px) {
+    .bookyol-blog__related-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 900px) {
+    .bookyol-blog__main {
+        grid-template-columns: 1fr;
+        gap: 48px;
+    }
+    .bookyol-blog__body { max-width: 100%; }
+    .bookyol-blog__sidebar { order: 2; }
+}
+
+@media (max-width: 640px) {
+    .bookyol-blog__container { padding: 24px 16px 0; }
+    .bookyol-blog__header { margin-bottom: 24px; }
+    .bookyol-blog__meta { flex-direction: column; align-items: flex-start; gap: 16px; }
+    .bookyol-blog__featured-img { margin-bottom: 32px; border-radius: 10px; }
+    .bookyol-blog__content { font-size: 17px; }
+    .bookyol-blog__content p,
+    .bookyol-blog__content ul,
+    .bookyol-blog__content ol { font-size: 17px; }
+    .bookyol-blog__content h2 { font-size: 26px !important; margin: 36px 0 16px 0 !important; }
+    .bookyol-blog__content h3 { font-size: 21px !important; margin: 28px 0 12px 0 !important; }
+    .bookyol-blog__related-grid { grid-template-columns: 1fr; }
+    .bookyol-blog__author-box { flex-direction: column; align-items: flex-start; padding: 24px; }
+    .bookyol-blog__author-avatar { width: 64px; height: 64px; }
+    .bookyol-blog__share-bottom { flex-direction: column; align-items: flex-start; }
+    .bookyol-blog__back-top { bottom: 16px; right: 16px; width: 40px; height: 40px; }
+    .bookyol-blog__related { padding-top: 40px; }
+    .bookyol-blog__related-title { font-size: 26px !important; }
+}
