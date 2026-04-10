@@ -201,10 +201,9 @@ class BookYol_Settings {
             wp_send_json_error( array( 'message' => __( 'Unauthorized', 'bookyol' ) ), 403 );
         }
 
-        $overwrite = isset( $_POST['overwrite'] ) && $_POST['overwrite'] === 'true';
-
+        // v4.5.0: Always overwrite to ensure affiliate IDs are applied.
         $generator = new BookYol_Link_Generator();
-        $result    = $generator->regenerate_all( $overwrite );
+        $result    = $generator->regenerate_all( true );
 
         wp_send_json_success( array(
             'message' => sprintf(

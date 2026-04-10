@@ -23,32 +23,55 @@ class BookYol_Link_Generator {
         return wp_parse_args( is_array( $stored ) ? $stored : array(), self::default_ids() );
     }
 
+    /**
+     * Generate all affiliate links for a book.
+     *
+     * @param string $isbn   ISBN-13 or ISBN-10
+     * @param string $title  Book title
+     * @param string $author Book author
+     * @return array         ['platform_slug' => 'full_affiliate_url', ...]
+     */
     public function generate_links( $isbn, $title, $author = '' ) {
         $ids   = self::get_ids();
         $links = array();
 
-        if ( ! empty( $ids['bookshop_id'] ) && ! empty( $isbn ) ) {
-            $links['bookshop'] = 'https://bookshop.org/a/' . rawurlencode( $ids['bookshop_id'] ) . '/' . rawurlencode( $isbn );
+        // Bookshop.org — Primary platform. ISBN preferred, title-based fallback.
+        if ( ! empty( $ids['bookshop_id'] ) ) {
+            if ( ! empty( $isbn ) ) {
+                $clean_isbn = preg_replace( '/[^0-9]/', '', $isbn );
+                $links['bookshop'] = 'https://bookshop.org/a/' . rawurlencode( $ids['bookshop_id'] ) . '/' . $clean_isbn;
+            } elseif ( ! empty( $title ) ) {
+                $search = $title;
+                if ( ! empty( $author ) ) {
+                    $search .= ' ' . $author;
+                }
+                $links['bookshop'] = 'https://bookshop.org/shop/bookyol?searchterm=' . rawurlencode( $search );
+            }
         }
 
+        // Ebooks.com — Book page with affiliate parameter.
         if ( ! empty( $ids['ebookscom_id'] ) && ! empty( $isbn ) ) {
             $links['ebookscom'] = 'https://www.ebooks.com/en-us/book/' . rawurlencode( $isbn ) . '/?aid=' . rawurlencode( $ids['ebookscom_id'] );
         }
 
+        // Kobo via Rakuten — deep link through Rakuten redirect.
         if ( ! empty( $ids['rakuten_id'] ) && ! empty( $isbn ) ) {
             $kobo_url       = 'https://www.kobo.com/us/en/search?query=' . rawurlencode( $isbn );
             $links['kobo']  = 'https://click.linksynergy.com/deeplink?id=' . rawurlencode( $ids['rakuten_id'] ) . '&mid=37217&murl=' . rawurlencode( $kobo_url );
         }
 
+        // Libro.fm via Awin — deep link through Awin redirect.
         if ( ! empty( $ids['awin_id'] ) && ! empty( $isbn ) ) {
             $libro_url        = 'https://libro.fm/audiobooks?searchterm=' . rawurlencode( $isbn );
             $links['librofm'] = 'https://www.awin1.com/cread.php?awinmid=25361&awinaffid=' . rawurlencode( $ids['awin_id'] ) . '&ued=' . rawurlencode( $libro_url );
         }
 
+        // Everand — single referral URL (not per-book).
         if ( ! empty( $ids['everand_url'] ) ) {
             $links['everand'] = $ids['everand_url'];
         }
 
+        // Jamalon via ArabClicks.
         if ( ! empty( $ids['jamalon_id'] ) && ! empty( $isbn ) ) {
             $links['jamalon'] = 'https://jamalon.com/en/catalogsearch/result?q=' . rawurlencode( $isbn ) . '&ref=' . rawurlencode( $ids['jamalon_id'] );
         }
@@ -56,15 +79,22 @@ class BookYol_Link_Generator {
         return $links;
     }
 
+    /**
+     * Generate and save links.
+     *
+     * @param int    $post_id
+     * @param string $isbn
+     * @param string $title
+     * @param string $author
+     * @return array
+     */
     public function generate_and_save( $post_id, $isbn, $title, $author = '' ) {
         $links = $this->generate_links( $isbn, $title, $author );
 
         foreach ( $links as $platform => $url ) {
             $meta_key = '_bookyol_link_' . $platform;
-            $existing = get_post_meta( $post_id, $meta_key, true );
-            if ( empty( $existing ) || $existing === 'https://' ) {
-                update_post_meta( $post_id, $meta_key, esc_url_raw( $url ) );
-            }
+            // Always update — overwrite empty, "https://", or stale links.
+            update_post_meta( $post_id, $meta_key, esc_url_raw( $url ) );
         }
 
         return $links;
