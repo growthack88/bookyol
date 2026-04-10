@@ -277,8 +277,40 @@ $render_book_card = function ( $book, $extra_badge = '', $badge_class = '' ) {
         </section>
     <?php endforeach; ?>
 
-    <!-- ══════ 6. EXPLORE BY CATEGORY (pills) ══════ -->
-    <?php if ( ! empty( $categories ) ) : ?>
+    <!-- ══════ 6. EXPLORE BY CATEGORY (pills — dynamic from taxonomy) ══════ -->
+    <?php
+    $cat_pill_emojis = array(
+        'business' => '💼', 'psychology' => '🧠', 'self-help' => '🌱',
+        'productivity' => '⚡', 'marketing' => '📈', 'finance' => '💰',
+        'leadership' => '🎯', 'biographies' => '📖', 'science' => '🔬',
+        'philosophy' => '💭', 'history' => '🏛️', 'creativity' => '🎨',
+        'fiction' => '📕', 'thriller' => '🔍', 'sci-fi' => '🚀',
+        'romance' => '💘', 'classic' => '📜', 'fantasy' => '🐉',
+        'memoir' => '✍️', 'health' => '🏃',
+    );
+    $cat_pill_colors = array(
+        'business' => 'biz', 'psychology' => 'psy', 'self-help' => 'self',
+        'productivity' => 'prod', 'marketing' => 'mkt', 'finance' => 'fin',
+        'leadership' => 'lead', 'biographies' => 'bio', 'science' => 'sci',
+        'philosophy' => 'phil', 'history' => 'his', 'creativity' => 'cre',
+        'fiction' => 'bio', 'thriller' => 'his', 'sci-fi' => 'self',
+        'romance' => 'lead', 'classic' => 'psy', 'fantasy' => 'psy',
+    );
+    $homepage_cats = array();
+    if ( taxonomy_exists( 'book_category' ) ) {
+        $maybe_cats = get_terms( array(
+            'taxonomy'   => 'book_category',
+            'hide_empty' => true,
+            'orderby'    => 'count',
+            'order'      => 'DESC',
+            'number'     => 12,
+        ) );
+        if ( ! is_wp_error( $maybe_cats ) ) {
+            $homepage_cats = $maybe_cats;
+        }
+    }
+    if ( ! empty( $homepage_cats ) ) :
+    ?>
         <section class="bookyol-section">
             <div class="bookyol-container">
                 <div class="bookyol-section__header">
@@ -287,21 +319,15 @@ $render_book_card = function ( $book, $extra_badge = '', $badge_class = '' ) {
                     </div>
                 </div>
                 <div class="bookyol-categories">
-                    <?php foreach ( $categories as $cat ) :
-                        if ( empty( $cat['name'] ) ) continue;
-                        $class = isset( $cat['color_class'] ) && $cat['color_class'] ? $cat['color_class'] : 'biz';
-                        $icon  = isset( $cat['icon'] ) ? $cat['icon'] : '';
-                        $url   = isset( $cat['url'] ) ? $cat['url'] : '#';
-                        $term  = get_term_by( 'name', $cat['name'], 'book_category' );
-                        if ( $term && ! is_wp_error( $term ) ) {
-                            $url = get_term_link( $term );
-                        }
+                    <?php foreach ( $homepage_cats as $hc ) :
+                        $link = get_term_link( $hc );
+                        if ( is_wp_error( $link ) ) continue;
+                        $emoji = isset( $cat_pill_emojis[ $hc->slug ] ) ? $cat_pill_emojis[ $hc->slug ] : '📖';
+                        $color = isset( $cat_pill_colors[ $hc->slug ] ) ? $cat_pill_colors[ $hc->slug ] : 'biz';
                         ?>
-                        <a class="bookyol-cat-pill bookyol-cat-pill--<?php echo esc_attr( $class ); ?>" href="<?php echo esc_url( $url ); ?>">
-                            <?php if ( $icon ) : ?>
-                                <span class="bookyol-cat-pill__icon"><?php echo esc_html( $icon ); ?></span>
-                            <?php endif; ?>
-                            <span class="bookyol-cat-pill__name"><?php echo esc_html( $cat['name'] ); ?></span>
+                        <a class="bookyol-cat-pill bookyol-cat-pill--<?php echo esc_attr( $color ); ?>" href="<?php echo esc_url( $link ); ?>">
+                            <span class="bookyol-cat-pill__icon"><?php echo esc_html( $emoji ); ?></span>
+                            <span class="bookyol-cat-pill__name"><?php echo esc_html( $hc->name ); ?></span>
                         </a>
                     <?php endforeach; ?>
                 </div>
