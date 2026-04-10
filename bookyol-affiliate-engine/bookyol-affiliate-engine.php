@@ -355,28 +355,50 @@ add_action( 'wp_head', function () {
     }
     ?>
     <style id="bookyol-search-archive-reset">
-        .search-results .site-content,
-        .search-results .site-content > .ast-container,
-        .search-results .ast-container,
-        .search-results #primary,
-        .search-results .entry-content,
-        .post-type-archive-bookyol_book .site-content,
-        .post-type-archive-bookyol_book .site-content > .ast-container,
-        .post-type-archive-bookyol_book .ast-container,
-        .post-type-archive-bookyol_book #primary,
-        .post-type-archive-bookyol_book .entry-content {
+        /* v4.5.0: Full-width override for search + book archive */
+        html body.search-results .site-content,
+        html body.search-results .site-content > .ast-container,
+        html body.search-results .ast-container,
+        html body.search-results #primary,
+        html body.search-results #primary > .ast-row,
+        html body.search-results .ast-article-single,
+        html body.search-results .post-inner,
+        html body.search-results .entry-content,
+        html body.post-type-archive-bookyol_book .site-content,
+        html body.post-type-archive-bookyol_book .site-content > .ast-container,
+        html body.post-type-archive-bookyol_book .ast-container,
+        html body.post-type-archive-bookyol_book #primary,
+        html body.post-type-archive-bookyol_book #primary > .ast-row,
+        html body.post-type-archive-bookyol_book .ast-article-single,
+        html body.post-type-archive-bookyol_book .post-inner,
+        html body.post-type-archive-bookyol_book .entry-content,
+        html body.post-type-archive-bookyol_book #content {
             max-width: 100% !important;
             width: 100% !important;
-            padding: 0 !important;
+            padding-left: 0 !important;
+            padding-right: 0 !important;
             margin-left: 0 !important;
             margin-right: 0 !important;
         }
-        .search-results .entry-header,
-        .search-results .page-header,
-        .post-type-archive-bookyol_book .entry-header,
-        .post-type-archive-bookyol_book .page-header,
-        .post-type-archive-bookyol_book .ast-archive-description {
+        html body.search-results .entry-header,
+        html body.search-results .page-header,
+        html body.post-type-archive-bookyol_book .entry-header,
+        html body.post-type-archive-bookyol_book .page-header,
+        html body.post-type-archive-bookyol_book .ast-archive-description,
+        html body.post-type-archive-bookyol_book .ast-archive-title {
             display: none !important;
+        }
+        /* Break .bookyol-archive out to viewport width */
+        html body.post-type-archive-bookyol_book .bookyol-archive,
+        html body.search-results .bookyol-search-page {
+            width: 100vw !important;
+            position: relative !important;
+            left: 50% !important;
+            right: 50% !important;
+            margin-left: -50vw !important;
+            margin-right: -50vw !important;
+            max-width: 100vw !important;
+            box-sizing: border-box !important;
         }
     </style>
     <?php
