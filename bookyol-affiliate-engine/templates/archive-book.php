@@ -119,28 +119,33 @@ $archive_url = get_post_type_archive_link( 'bookyol_book' );
                 <span class="bookyol-archive__results">
                     <strong><?php echo esc_html( $total ); ?></strong> <?php esc_html_e( 'books', 'bookyol' ); ?>
                     <?php if ( $search ) : ?>
-                        <?php
-                        /* translators: %s: search query */
-                        printf( esc_html__( 'for "%s"', 'bookyol' ), esc_html( $search ) );
-                        ?>
+                        <?php printf( esc_html__( 'for "%s"', 'bookyol' ), esc_html( $search ) ); ?>
                     <?php endif; ?>
                 </span>
-                <div class="bookyol-archive__sort">
-                    <label><?php esc_html_e( 'Sort:', 'bookyol' ); ?></label>
-                    <select onchange="window.location.href=this.value;">
-                        <?php
-                        $sort_opts = array(
-                            'latest'     => __( 'Newest', 'bookyol' ),
-                            'title_asc'  => __( 'A-Z', 'bookyol' ),
-                            'title_desc' => __( 'Z-A', 'bookyol' ),
-                            'rating'     => __( 'Top Rated', 'bookyol' ),
-                        );
-                        foreach ( $sort_opts as $sk => $sl ) :
-                            $u = add_query_arg( array( 'sort' => $sk, 'bookq' => $search, 'cat' => $cat_filter ), $archive_url );
-                            ?>
-                            <option value="<?php echo esc_url( $u ); ?>" <?php selected( $sort, $sk ); ?>><?php echo esc_html( $sl ); ?></option>
-                        <?php endforeach; ?>
-                    </select>
+                <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+                    <form class="bookyol-archive__search" method="get" action="<?php echo esc_url( $archive_url ); ?>" style="margin:0;max-width:260px;">
+                        <input type="text" name="bookq" placeholder="<?php esc_attr_e( 'Filter books...', 'bookyol' ); ?>" value="<?php echo esc_attr( $search ); ?>" />
+                        <?php if ( $cat_filter ) : ?><input type="hidden" name="cat" value="<?php echo esc_attr( $cat_filter ); ?>" /><?php endif; ?>
+                        <?php if ( $sort !== 'latest' ) : ?><input type="hidden" name="sort" value="<?php echo esc_attr( $sort ); ?>" /><?php endif; ?>
+                        <button type="submit" style="background:#7C5CFC;"><?php esc_html_e( 'Go', 'bookyol' ); ?></button>
+                    </form>
+                    <div class="bookyol-archive__sort">
+                        <label><?php esc_html_e( 'Sort:', 'bookyol' ); ?></label>
+                        <select onchange="window.location.href=this.value;">
+                            <?php
+                            $sort_opts = array(
+                                'latest'     => __( 'Newest', 'bookyol' ),
+                                'title_asc'  => __( 'A-Z', 'bookyol' ),
+                                'title_desc' => __( 'Z-A', 'bookyol' ),
+                                'rating'     => __( 'Top Rated', 'bookyol' ),
+                            );
+                            foreach ( $sort_opts as $sk => $sl ) :
+                                $u = add_query_arg( array( 'sort' => $sk, 'bookq' => $search, 'cat' => $cat_filter ), $archive_url );
+                                ?>
+                                <option value="<?php echo esc_url( $u ); ?>" <?php selected( $sort, $sk ); ?>><?php echo esc_html( $sl ); ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
                 </div>
             </div>
 
