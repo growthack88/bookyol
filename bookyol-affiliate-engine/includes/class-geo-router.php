@@ -13,13 +13,14 @@ class BookYol_Geo_Router {
         'au'  => array( 'AU', 'NZ' ),
     );
 
+    // Bookshop.org is ALWAYS first in every market
     private $platform_priority = array(
-        'us'     => array( 'everand', 'librofm', 'bookshop', 'ebookscom', 'kobo' ),
-        'uk'     => array( 'everand', 'librofm', 'bookshop', 'ebookscom', 'kobo' ),
-        'eu'     => array( 'ebookscom', 'librofm', 'kobo', 'everand' ),
-        'gcc'    => array( 'ebookscom', 'kobo', 'jamalon' ),
-        'au'     => array( 'everand', 'ebookscom', 'kobo', 'librofm' ),
-        'global' => array( 'ebookscom', 'kobo', 'librofm' ),
+        'us'     => array( 'bookshop', 'everand', 'librofm', 'ebookscom', 'kobo' ),
+        'uk'     => array( 'bookshop', 'everand', 'librofm', 'ebookscom', 'kobo' ),
+        'eu'     => array( 'bookshop', 'ebookscom', 'librofm', 'kobo', 'everand' ),
+        'gcc'    => array( 'bookshop', 'ebookscom', 'kobo', 'jamalon' ),
+        'au'     => array( 'bookshop', 'everand', 'ebookscom', 'kobo', 'librofm' ),
+        'global' => array( 'bookshop', 'ebookscom', 'kobo', 'librofm' ),
     );
 
     private $country_code = null;
