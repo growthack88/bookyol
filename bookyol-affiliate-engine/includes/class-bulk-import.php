@@ -62,33 +62,14 @@ class BookYol_Bulk_Import {
         ?>
         <div class="wrap">
             <h1><?php esc_html_e( 'Bulk Book Import', 'bookyol' ); ?></h1>
-            <p><?php esc_html_e( 'Enter book titles or ISBNs, one per line (max 20). Searches Google Books first, then Open Library as fallback.', 'bookyol' ); ?></p>
+            <p><?php esc_html_e( 'Enter book titles or ISBNs, one per line (max 20):', 'bookyol' ); ?></p>
 
-            <textarea id="bookyol-bulk-input" rows="10" style="width:100%; max-width:700px; font-family:monospace;" placeholder="Atomic Habits&#10;9780735211292&#10;Deep Work&#10;The Psychology of Money"></textarea>
+            <textarea id="bookyol-bulk-input" rows="10" style="width:100%; max-width:700px; font-family:monospace;" placeholder="Atomic Habits&#10;978-0735211292&#10;Deep Work&#10;The Psychology of Money"></textarea>
 
             <p>
                 <button type="button" class="button button-primary" id="bookyol-bulk-lookup"><?php esc_html_e( 'Lookup All', 'bookyol' ); ?></button>
-                <button type="button" class="button" id="bookyol-clear-cache" style="margin-left:8px;" onclick="
-                    if(confirm('Clear all lookup cache? This allows re-searching ISBNs that previously failed.')){
-                        fetch(BookYolBulk.ajaxUrl, {
-                            method:'POST',
-                            headers:{'Content-Type':'application/x-www-form-urlencoded'},
-                            body:'action=bookyol_clear_lookup_cache&nonce='+BookYolBulk.lookupNonce
-                        }).then(r=>r.json()).then(d=>{
-                            alert(d.success ? '✅ Cache cleared! Try Lookup again.' : '❌ Error clearing cache.');
-                        });
-                    }
-                "><?php esc_html_e( '🗑️ Clear Lookup Cache', 'bookyol' ); ?></button>
                 <span id="bookyol-bulk-progress" style="margin-left:10px; color:#666;"></span>
             </p>
-
-            <div style="margin:12px 0; padding:12px 16px; background:#f0f6ff; border-left:4px solid #4A90D9; border-radius:4px; font-size:13px; max-width:700px;">
-                <strong>💡 Tips:</strong><br>
-                • Use <strong>book titles</strong> instead of ISBNs for better results (e.g., "Atomic Habits" not "9780735211292")<br>
-                • You can also search by <strong>"Title Author"</strong> (e.g., "Deep Work Cal Newport")<br>
-                • If ISBN fails, the system tries Open Library automatically<br>
-                • Click "Clear Lookup Cache" if books that should exist keep showing "Not found"
-            </div>
 
             <div id="bookyol-bulk-results"></div>
 
@@ -104,7 +85,7 @@ class BookYol_Bulk_Import {
         check_ajax_referer( self::NONCE_ACTION, 'nonce' );
 
         if ( ! current_user_can( 'edit_posts' ) ) {
-            wp_send_json_error( array( 'message' => 'Permission denied' ), 403 );
+            wp_send_json_error( array( 'message' => __( 'Permission denied', 'bookyol' ) ), 403 );
         }
 
         $books_raw = isset( $_POST['books'] ) ? wp_unslash( $_POST['books'] ) : '';
@@ -115,7 +96,7 @@ class BookYol_Bulk_Import {
         }
 
         if ( ! is_array( $books ) || empty( $books ) ) {
-            wp_send_json_error( array( 'message' => 'No books provided' ) );
+            wp_send_json_error( array( 'message' => __( 'No books provided', 'bookyol' ) ) );
         }
 
         $imported = 0;
@@ -143,17 +124,11 @@ class BookYol_Bulk_Import {
                 continue;
             }
 
-            // Also check by title to avoid duplicates
-            if ( $this->title_exists( $title ) ) {
-                $skipped++;
-                continue;
-            }
-
-            $authors    = isset( $book['authors'] ) && is_array( $book['authors'] ) ? array_map( 'sanitize_text_field', $book['authors'] ) : array();
+            $authors = isset( $book['authors'] ) && is_array( $book['authors'] ) ? array_map( 'sanitize_text_field', $book['authors'] ) : array();
             $author_str = implode( ', ', $authors );
 
-            $categories = isset( $book['categories'] ) && is_array( $book['categories'] ) ? array_map( 'sanitize_text_field', $book['categories'] ) : array();
-            $best_for   = implode( ', ', $categories );
+            $categories  = isset( $book['categories'] ) && is_array( $book['categories'] ) ? array_map( 'sanitize_text_field', $book['categories'] ) : array();
+            $best_for    = implode( ', ', $categories );
 
             $description = isset( $book['description'] ) ? wp_strip_all_tags( (string) $book['description'] ) : '';
             $excerpt     = mb_substr( $description, 0, 300 );
@@ -180,8 +155,47 @@ class BookYol_Bulk_Import {
                 update_post_meta( $post_id, '_bookyol_cover_url', esc_url_raw( $book['thumbnail'] ) );
             }
 
+            // Generate real affiliate deep links from saved IDs.
             $generator = new BookYol_Link_Generator();
             $generator->generate_and_save( $post_id, $isbn, $title, $author_str );
+
+            // v4.5.0: Auto-assign book_category based on title/description keywords.
+            if ( taxonomy_exists( 'book_category' ) ) {
+                $searchable = strtolower( $title . ' ' . $best_for . ' ' . $description );
+
+                $keyword_map = array(
+                    'fiction'       => array( 'fiction', 'novel', 'story', 'literary', 'fantasy', 'romance', 'thriller', 'mystery', 'dystopian' ),
+                    'business'      => array( 'business', 'startup', 'entrepreneur', 'company', 'management', 'strategy', 'corporate' ),
+                    'psychology'    => array( 'psychology', 'mind', 'brain', 'behavior', 'cognitive', 'mental', 'thinking', 'emotional' ),
+                    'self-help'     => array( 'self-help', 'self help', 'personal development', 'motivation', 'mindset', 'happiness' ),
+                    'productivity'  => array( 'productivity', 'time management', 'focus', 'efficiency', 'habits', 'routine' ),
+                    'marketing'     => array( 'marketing', 'branding', 'advertising', 'sales', 'copywriting', 'influence', 'persuasion' ),
+                    'finance'       => array( 'finance', 'money', 'investing', 'wealth', 'financial', 'economics', 'rich' ),
+                    'leadership'    => array( 'leadership', 'leader', 'team', 'culture', 'inspire', 'vision', 'executive' ),
+                    'biographies'   => array( 'biography', 'autobiography', 'memoir', 'life story' ),
+                    'science'       => array( 'science', 'physics', 'biology', 'research', 'technology', 'evolution' ),
+                    'philosophy'    => array( 'philosophy', 'stoic', 'wisdom', 'meaning', 'ethics', 'meditations' ),
+                    'history'       => array( 'history', 'historical', 'war', 'ancient', 'civilization' ),
+                    'creativity'    => array( 'creativity', 'creative', 'art', 'design', 'innovation', 'imagination' ),
+                );
+
+                $matched_terms = array();
+                foreach ( $keyword_map as $cat_slug => $keywords ) {
+                    foreach ( $keywords as $kw ) {
+                        if ( stripos( $searchable, $kw ) !== false ) {
+                            $term = get_term_by( 'slug', $cat_slug, 'book_category' );
+                            if ( $term && ! is_wp_error( $term ) ) {
+                                $matched_terms[] = (int) $term->term_id;
+                            }
+                            break;
+                        }
+                    }
+                }
+
+                if ( ! empty( $matched_terms ) ) {
+                    wp_set_post_terms( $post_id, $matched_terms, 'book_category' );
+                }
+            }
 
             $imported++;
         }
@@ -207,18 +221,6 @@ class BookYol_Bulk_Import {
                     'value' => $isbn,
                 ),
             ),
-        ) );
-        return $query->have_posts();
-    }
-
-    private function title_exists( $title ) {
-        $query = new WP_Query( array(
-            'post_type'      => 'bookyol_book',
-            'post_status'    => array( 'publish', 'draft', 'pending', 'future', 'private' ),
-            'posts_per_page' => 1,
-            'fields'         => 'ids',
-            'no_found_rows'  => true,
-            'title'          => $title,
         ) );
         return $query->have_posts();
     }
