@@ -2,7 +2,7 @@
 /**
  * Plugin Name: BookYol Affiliate Engine
  * Description: Book affiliate link management with geo-routing, click tracking, and display shortcodes for BookYol.com
- * Version: 4.2.0
+ * Version: 4.5.0
  * Author: Mahmoud Omar
  * Author URI: https://mahmoudomar.com
  * Text Domain: bookyol
@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'BOOKYOL_VERSION', '4.2.0' );
+define( 'BOOKYOL_VERSION', '4.5.0' );
 define( 'BOOKYOL_PATH', plugin_dir_path( __FILE__ ) );
 define( 'BOOKYOL_URL', plugin_dir_url( __FILE__ ) );
 define( 'BOOKYOL_FILE', __FILE__ );
@@ -72,8 +72,8 @@ function bookyol_enqueue_frontend() {
         );
     }
 
-    // Load fonts on single book pages and category archives for the rich templates.
-    if ( is_singular( 'bookyol_book' ) || is_tax( 'book_category' ) ) {
+    // Load fonts on single book pages, category archives, search, and book archive.
+    if ( is_singular( 'bookyol_book' ) || is_tax( 'book_category' ) || is_search() || is_post_type_archive( 'bookyol_book' ) ) {
         wp_enqueue_style(
             'bookyol-google-fonts',
             'https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@400;500;600;700&display=swap',
@@ -163,24 +163,37 @@ add_filter( 'template_include', function ( $template ) {
         $t = BOOKYOL_PATH . 'templates/single-post.php';
         if ( file_exists( $t ) ) return $t;
     }
+    // v4.5.0: Search results template.
+    if ( is_search() ) {
+        $t = BOOKYOL_PATH . 'templates/search-results.php';
+        if ( file_exists( $t ) ) return $t;
+    }
+    // v4.5.0: All-books archive template.
+    if ( is_post_type_archive( 'bookyol_book' ) ) {
+        $t = BOOKYOL_PATH . 'templates/archive-book.php';
+        if ( file_exists( $t ) ) return $t;
+    }
     return $template;
 }, 999 );
 
-// Astra compatibility filters — cover homepage, single book, category archive, and blog posts.
+// Astra compatibility filters — cover homepage, single book, category archive, blog posts, search, and book archive.
 add_filter( 'astra_the_title_enabled', function ( $enabled ) {
     if ( is_singular( 'bookyol_book' ) || is_tax( 'book_category' ) || is_singular( 'post' ) ) return false;
+    if ( is_search() || is_post_type_archive( 'bookyol_book' ) ) return false;
     if ( bookyol_is_homepage() ) return false;
     return $enabled;
 } );
 
 add_filter( 'astra_page_layout', function ( $layout ) {
     if ( is_singular( 'bookyol_book' ) || is_tax( 'book_category' ) || is_singular( 'post' ) ) return 'no-sidebar';
+    if ( is_search() || is_post_type_archive( 'bookyol_book' ) ) return 'no-sidebar';
     if ( bookyol_is_homepage() ) return 'no-sidebar';
     return $layout;
 } );
 
 add_filter( 'astra_get_content_layout', function ( $layout ) {
     if ( is_singular( 'bookyol_book' ) || is_tax( 'book_category' ) || is_singular( 'post' ) ) return 'page-builder';
+    if ( is_search() || is_post_type_archive( 'bookyol_book' ) ) return 'page-builder';
     if ( bookyol_is_homepage() ) return 'page-builder';
     return $layout;
 } );
@@ -191,12 +204,6 @@ add_action( 'wp_head', function () {
     }
     ?>
     <style id="bookyol-astra-reset">
-        /* ============================================================
-           Force full-width canvas on the BookYol homepage template.
-           Astra (and most themes) wrap .entry-content in a max-width
-           container with horizontal padding. These rules collapse all
-           of that so .bookyol-home renders edge-to-edge.
-           ============================================================ */
         body.page-template-bookyol-homepage .site-content,
         body.page-template-bookyol-homepage .site-content > .ast-container,
         body.page-template-bookyol-homepage .ast-container,
@@ -212,15 +219,12 @@ add_action( 'wp_head', function () {
             margin-left: 0 !important;
             margin-right: 0 !important;
         }
-
         body.page-template-bookyol-homepage .entry-header,
         body.page-template-bookyol-homepage .ast-single-post .entry-header,
         body.page-template-bookyol-homepage .page-title,
         body.page-template-bookyol-homepage .entry-title {
             display: none !important;
         }
-
-        /* If Astra still constrains .entry-content, break out with 100vw. */
         body.page-template-bookyol-homepage .entry-content > .bookyol-home {
             width: 100vw !important;
             position: relative !important;
@@ -230,14 +234,9 @@ add_action( 'wp_head', function () {
             margin-right: -50vw !important;
             max-width: 100vw !important;
         }
-
-        /* Kill default content-area padding that Astra injects. */
         body.page-template-bookyol-homepage .site-content .ast-container {
             padding: 0 !important;
         }
-
-        /* Remove any inherited typography margins on our headings/paragraphs
-           that would push sections apart. */
         body.page-template-bookyol-homepage .bookyol-home h1,
         body.page-template-bookyol-homepage .bookyol-home h2,
         body.page-template-bookyol-homepage .bookyol-home h3,
@@ -248,7 +247,6 @@ add_action( 'wp_head', function () {
     <?php
 } );
 
-/* Add our own body class so the reset above can target the template reliably. */
 add_filter( 'body_class', function ( $classes ) {
     if ( bookyol_is_homepage() ) {
         $classes[] = 'page-template-bookyol-homepage';
@@ -256,14 +254,12 @@ add_filter( 'body_class', function ( $classes ) {
     return $classes;
 } );
 
-// Astra container reset for single book / category archive pages.
 add_action( 'wp_head', function () {
     if ( ! is_singular( 'bookyol_book' ) && ! is_tax( 'book_category' ) ) {
         return;
     }
     ?>
     <style id="bookyol-single-reset">
-        /* v4.0.0: Force full-width on single book + category archive pages. */
         .single-bookyol_book .site-content,
         .single-bookyol_book .site-content > .ast-container,
         .single-bookyol_book .ast-container,
@@ -298,7 +294,6 @@ add_action( 'wp_head', function () {
             padding: 0 !important;
             max-width: 100% !important;
         }
-        /* Break our wrappers out of any remaining container. */
         .single-bookyol_book .entry-content > .bookyol-single,
         .tax-book_category  .entry-content > .bookyol-archive {
             width: 100vw;
@@ -313,7 +308,6 @@ add_action( 'wp_head', function () {
     <?php
 } );
 
-// v4.1.0: Astra container reset for single blog posts.
 add_action( 'wp_head', function () {
     if ( ! is_singular( 'post' ) ) {
         return;
@@ -339,7 +333,6 @@ add_action( 'wp_head', function () {
         html body.single-post .ast-single-post-order .entry-header {
             display: none !important;
         }
-        /* Break our wrapper to viewport width. */
         html body.single-post .entry-content > .bookyol-blog,
         html body.single-post .bookyol-blog {
             width: 100vw !important;
@@ -350,6 +343,40 @@ add_action( 'wp_head', function () {
             margin-right: -50vw !important;
             max-width: 100vw !important;
             box-sizing: border-box !important;
+        }
+    </style>
+    <?php
+} );
+
+// v4.5.0: Astra container reset for search results and book archive pages.
+add_action( 'wp_head', function () {
+    if ( ! is_search() && ! is_post_type_archive( 'bookyol_book' ) ) {
+        return;
+    }
+    ?>
+    <style id="bookyol-search-archive-reset">
+        .search-results .site-content,
+        .search-results .site-content > .ast-container,
+        .search-results .ast-container,
+        .search-results #primary,
+        .search-results .entry-content,
+        .post-type-archive-bookyol_book .site-content,
+        .post-type-archive-bookyol_book .site-content > .ast-container,
+        .post-type-archive-bookyol_book .ast-container,
+        .post-type-archive-bookyol_book #primary,
+        .post-type-archive-bookyol_book .entry-content {
+            max-width: 100% !important;
+            width: 100% !important;
+            padding: 0 !important;
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+        }
+        .search-results .entry-header,
+        .search-results .page-header,
+        .post-type-archive-bookyol_book .entry-header,
+        .post-type-archive-bookyol_book .page-header,
+        .post-type-archive-bookyol_book .ast-archive-description {
+            display: none !important;
         }
     </style>
     <?php
