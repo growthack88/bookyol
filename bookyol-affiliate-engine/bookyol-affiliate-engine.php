@@ -176,7 +176,7 @@ add_filter( 'template_include', function ( $template ) {
     return $template;
 }, 999 );
 
-// Astra compatibility filters — cover homepage, single book, category archive, blog posts, search, and book archive.
+// Astra compatibility filters.
 add_filter( 'astra_the_title_enabled', function ( $enabled ) {
     if ( is_singular( 'bookyol_book' ) || is_tax( 'book_category' ) || is_singular( 'post' ) ) return false;
     if ( is_search() || is_post_type_archive( 'bookyol_book' ) ) return false;
@@ -355,31 +355,60 @@ add_action( 'wp_head', function () {
     }
     ?>
     <style id="bookyol-search-archive-reset">
-        /* v4.5.0: Full-width override for search + book archive */
-        html body.search-results .site-content,
-        html body.search-results .site-content > .ast-container,
-        html body.search-results .ast-container,
-        html body.search-results #primary,
-        html body.search-results #primary > .ast-row,
-        html body.search-results .ast-article-single,
-        html body.search-results .post-inner,
-        html body.search-results .entry-content,
+        /* v4.5.0: Full-width for /books/ archive + search.
+           Astra uses body.ast-separate-container.ast-two-container
+           with .ast-container { max-width:1152px } + #secondary sidebar.
+           We must nuke all of that. */
+
+        html body.post-type-archive-bookyol_book #page,
         html body.post-type-archive-bookyol_book .site-content,
-        html body.post-type-archive-bookyol_book .site-content > .ast-container,
         html body.post-type-archive-bookyol_book .ast-container,
         html body.post-type-archive-bookyol_book #primary,
         html body.post-type-archive-bookyol_book #primary > .ast-row,
         html body.post-type-archive-bookyol_book .ast-article-single,
+        html body.post-type-archive-bookyol_book .ast-article-post,
         html body.post-type-archive-bookyol_book .post-inner,
         html body.post-type-archive-bookyol_book .entry-content,
-        html body.post-type-archive-bookyol_book #content {
+        html body.post-type-archive-bookyol_book #content,
+        html body.search-results #page,
+        html body.search-results .site-content,
+        html body.search-results .ast-container,
+        html body.search-results #primary,
+        html body.search-results #primary > .ast-row,
+        html body.search-results .ast-article-single,
+        html body.search-results .ast-article-post,
+        html body.search-results .post-inner,
+        html body.search-results .entry-content {
             max-width: 100% !important;
             width: 100% !important;
             padding-left: 0 !important;
             padding-right: 0 !important;
-            margin-left: 0 !important;
-            margin-right: 0 !important;
+            margin-left: auto !important;
+            margin-right: auto !important;
         }
+
+        /* Hide sidebar so primary goes full-width */
+        html body.post-type-archive-bookyol_book #secondary,
+        html body.search-results #secondary {
+            display: none !important;
+        }
+        html body.post-type-archive-bookyol_book #primary,
+        html body.search-results #primary {
+            float: none !important;
+            width: 100% !important;
+        }
+
+        /* Kill Astra separate-container box styling */
+        html body.post-type-archive-bookyol_book.ast-separate-container .ast-article-post,
+        html body.post-type-archive-bookyol_book.ast-separate-container .ast-article-single,
+        html body.search-results.ast-separate-container .ast-article-post,
+        html body.search-results.ast-separate-container .ast-article-single {
+            background: transparent !important;
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+
+        /* Hide headers */
         html body.search-results .entry-header,
         html body.search-results .page-header,
         html body.post-type-archive-bookyol_book .entry-header,
@@ -388,7 +417,8 @@ add_action( 'wp_head', function () {
         html body.post-type-archive-bookyol_book .ast-archive-title {
             display: none !important;
         }
-        /* Break .bookyol-archive out to viewport width */
+
+        /* Break .bookyol-archive out to full viewport */
         html body.post-type-archive-bookyol_book .bookyol-archive,
         html body.search-results .bookyol-search-page {
             width: 100vw !important;
